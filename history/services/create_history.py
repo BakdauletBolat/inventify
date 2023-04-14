@@ -5,7 +5,7 @@ from base.services.get_current_user import get_current_user
 from history.models.History import History
 
 
-def create_history(sender: ModelBase, instance, action, type, **kwargs):
+def create_history(sender: ModelBase, instance, type, **kwargs):
     user = get_current_user()
     edits = {
         'attributes': {},
@@ -13,20 +13,14 @@ def create_history(sender: ModelBase, instance, action, type, **kwargs):
     }
     match type:
         case 'single':
-            if instance.id is not None:
-                old_instance = sender.objects.get(id=instance.id)
-                for field in instance._meta.fields:
-                    if getattr(instance, field.attname) != getattr(old_instance, field.attname):
-                        edits['attributes'][field.name] = {
-                            'from': getattr(old_instance, field.attname),
-                            'to': getattr(instance, field.attname)
-                        }
+            action = 'created'
+            if kwargs.get('created') == False:
+                action = 'edit'
+                edits['attributes'] = list(kwargs.get('update_fields'))
         case 'many_to_many':
-            print(list(kwargs.get('pk_set')))
-            edits['many_to_many'][sender.__name__] = {
-                [action]: list(kwargs.get('pk_set'))
-            }
-
+            action = kwargs.get('action')
+            edits['many_to_many'][kwargs.get('model').__name__] = list(kwargs.get('pk_set'))
+    
     History.objects.create(
         action=action,
         content_object=instance,

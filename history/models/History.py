@@ -11,7 +11,7 @@ class History(BaseModel):
     instance = models.ForeignKey(ContentType, on_delete=models.CASCADE)
     object_id = models.PositiveIntegerField()
     content_object = GenericForeignKey('instance', 'object_id')
-    edits = models.JSONField(default={})
+    edits = models.JSONField(default=dict)
     user = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True)
 
     class Meta:
