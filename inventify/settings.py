@@ -23,7 +23,9 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'history',
-
+    'apps.category',
+    'apps.stock',
+    'apps.supplier',
     'apps.product'
 ]
 

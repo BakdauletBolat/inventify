@@ -9,33 +9,37 @@ class Migration(migrations.Migration):
     initial = True
 
     dependencies = [
-        ('supplier', '0001_initial'),
+        ('product', '0001_initial'),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='Price',
+            name='Quality',
             fields=[
                 ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
                 ('created_at', models.DateTimeField(auto_now_add=True)),
                 ('updated_at', models.DateTimeField(auto_now=True)),
-                ('cost', models.IntegerField()),
+                ('name', models.CharField(max_length=255)),
             ],
             options={
                 'abstract': False,
             },
         ),
         migrations.CreateModel(
-            name='Product',
+            name='Warehouse',
             fields=[
                 ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
                 ('name', models.CharField(max_length=255)),
-                ('sdu', models.CharField(max_length=255)),
-                ('prices', models.ManyToManyField(related_name='products', to='product.price')),
-                ('supplier', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='supplier.supplier')),
             ],
-            options={
-                'unique_together': {('supplier_id', 'sdu')},
-            },
+        ),
+        migrations.CreateModel(
+            name='Stock',
+            fields=[
+                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                ('quantity', models.PositiveIntegerField(default=0)),
+                ('min_stock_level', models.PositiveIntegerField(default=10)),
+                ('product', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='product.product')),
+                ('quality', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='stock.quality')),
+            ],
         ),
     ]
