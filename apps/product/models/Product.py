@@ -11,7 +11,7 @@ from django.db.models.signals import m2m_changed, post_save
 
 class Product(models.Model):
     name = models.CharField(max_length=255)
-    sdu = models.CharField(max_length=255)
+    sku = models.CharField(max_length=255)
     supplier = models.ForeignKey(Supplier, on_delete=models.CASCADE)
     prices = models.ManyToManyField(Price, related_name='products')
     histories = GenericRelation(History)
@@ -20,7 +20,12 @@ class Product(models.Model):
         return self.name
 
     class Meta:
-        unique_together = ['supplier_id', 'sdu']
+        unique_together = ['supplier', 'sku']
+
+
+class ProductImage(models.Model):
+    image = models.ImageField(upload_to='ProductImage/')
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='pictures')
 
 
 @receiver(post_save, sender=Product)

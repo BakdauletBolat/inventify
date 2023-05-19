@@ -1,22 +1,14 @@
-import re
-
-# Регулярное выражение для номеров телефонов Казахстана
+import dataclasses
 
 
-# Тестовые номера телефонов Казахстана
-phone_numbers = [
-    '+77071234567',
-    '+7-701-123-45-67',
-    '+77071234567',
-    '8 (707) 123-45-67',
-    '87071234567',
-    '7 701 123 45 67',
-]
+@dataclasses.dataclass
+class Credit:
+    id: int
+    name: str
 
-# Проверка номеров телефонов с использованием регулярного выражения
-for phone_number in phone_numbers:
-    match = re.match(regex, phone_number)
-    if match:
-        print(f'{phone_number} - является допустимым номером телефона Казахстана.')
-    else:
-        print(f'{phone_number} - не является допустимым номером телефона Казахстана.')
+    d
+
+
+credit = Credit(id=1, name=2)
+
+print(dataclasses.asdict(credit))
