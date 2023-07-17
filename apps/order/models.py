@@ -2,7 +2,7 @@ from django.core.exceptions import ValidationError
 from django.db import models
 
 from apps.product.models import Product
-from apps.stock.models import StockHistory, Stock
+from apps.stock.models import Quality, StockHistory, Stock
 from base import models as base_models
 import uuid
 
@@ -19,12 +19,14 @@ class Order(base_models.BaseModel):
 
 
 class OrderItem(models.Model):
+    price = models.BigIntegerField(default=100)
     product = models.ForeignKey(Product, on_delete=models.CASCADE)
     quantity = models.PositiveIntegerField()
     order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name='goods')
+    quality = models.ForeignKey(Quality, on_delete=models.CASCADE)
 
     def clean(self):
-        stock = Stock.objects.filter(product=self.product, quality_id=1).last()
+        stock = Stock.objects.filter(product=self.product, quality=self.quality).last()
         if stock is not None:
             if stock.quantity - self.quantity < 0:
                 raise ValidationError(f"Не хватает товара текущая кол: {stock.quantity}")
