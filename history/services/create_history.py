@@ -20,7 +20,7 @@ def create_history(sender: ModelBase, instance, type, **kwargs):
         case 'many_to_many':
             action = kwargs.get('action')
             edits['many_to_many'][kwargs.get('model').__name__] = list(kwargs.get('pk_set'))
-    
+
     History.objects.create(
         action=action,
         content_object=instance,

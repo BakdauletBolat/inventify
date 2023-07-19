@@ -1,7 +1,7 @@
-from django.urls import path
+from apps.product import views
+from rest_framework import routers
 
-from product.views import ProductTestView
+router = routers.SimpleRouter()
+router.register('', views.ProductViewSet)
 
-urlpatterns = [
-    path('', ProductTestView.as_view())
-]
+urlpatterns = router.urls
