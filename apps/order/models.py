@@ -1,13 +1,10 @@
+import uuid
 from django.core.exceptions import ValidationError
 from django.db import models
 
 from apps.product.models import Product
 from apps.stock.models import Quality, StockHistory, Stock
 from base import models as base_models
-import uuid
-
-
-
 
 
 def default_uuid():
@@ -16,6 +13,13 @@ def default_uuid():
 
 class Order(base_models.BaseModel):
     uuid = models.UUIDField(unique=True, default=default_uuid, blank=True)
+
+    class Meta:
+        verbose_name = 'Заказ'
+        verbose_name_plural = 'Заказы'
+
+    def __str__(self):
+        return self.uuid
 
 
 class OrderItem(models.Model):
@@ -44,3 +48,7 @@ class OrderItem(models.Model):
         stock.quantity -= self.quantity
         stock.save()
         super(OrderItem, self).save(*args, **kwargs)
+
+    class Meta:
+        verbose_name = 'Деталь заказа'
+        verbose_name_plural = 'Детали заказа'
