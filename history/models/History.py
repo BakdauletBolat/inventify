@@ -1,11 +1,9 @@
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
-from base.models import BaseModel
 from django.db import models
 
-from django.conf import settings
-
-User = settings.AUTH_USER_MODEL
+from base.models import BaseModel
+from users.models import User
 
 
 class History(BaseModel):

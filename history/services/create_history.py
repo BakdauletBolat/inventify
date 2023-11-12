@@ -14,7 +14,7 @@ def create_history(sender: ModelBase, instance, type, **kwargs):
     match type:
         case 'single':
             action = 'created'
-            if kwargs.get('created') == False:
+            if kwargs.get('created') is False:
                 action = 'edit'
                 edits['attributes'] = list(kwargs.get('update_fields'))
         case 'many_to_many':
