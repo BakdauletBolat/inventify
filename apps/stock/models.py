@@ -1,4 +1,5 @@
 from django.db import models
+
 from apps.product.models import Product
 from base import models as base_models
 
@@ -9,12 +10,20 @@ class Quality(base_models.BaseModel):
     def __str__(self):
         return f"{self.id}: {self.name}"
 
+    class Meta:
+        verbose_name = 'Качество'
+        verbose_name_plural = 'Качества'
+
 
 class Warehouse(base_models.BaseModel):
     name = models.CharField(max_length=255)
 
     def __str__(self):
         return self.name
+
+    class Meta:
+        verbose_name = 'Склад'
+        verbose_name_plural = 'Склады'
 
 
 class Stock(base_models.BaseModel):
@@ -26,6 +35,8 @@ class Stock(base_models.BaseModel):
 
     class Meta:
         unique_together = ('product', 'quality', 'warehouse')
+        verbose_name = 'Остаток'
+        verbose_name_plural = 'Остатки'
 
     def __str__(self):
         return f"Продукт: {self.product} кол. ({self.quantity})"
@@ -35,6 +46,10 @@ class StockHistory(base_models.BaseModel):
     stock = models.ForeignKey(Stock, on_delete=models.CASCADE)
     quantity_before = models.PositiveIntegerField(null=True, blank=True)
     quantity_after = models.PositiveIntegerField()
+
+    class Meta:
+        verbose_name = 'История остатка'
+        verbose_name_plural = 'История остатков'
 
 
 class StockReceipt(base_models.BaseModel):
@@ -47,8 +62,8 @@ class StockReceipt(base_models.BaseModel):
         return f"{self.quantity} единиц продукта {self.product.name} поступило на склад {self.warehouse.name}"
 
     class Meta:
-        verbose_name = 'Поступление'
-        verbose_name_plural = 'Поступлений'
+        verbose_name = 'Приемка'
+        verbose_name_plural = 'Приемка'
 
     def save(self, *args, **kwargs):
         stock, created = Stock.objects.get_or_create(product=self.product, warehouse=self.warehouse,

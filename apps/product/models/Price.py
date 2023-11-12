@@ -8,3 +8,7 @@ class Price(BaseModel):
 
     def __str__(self):
         return str(self.cost)
+
+    class Meta:
+        verbose_name = 'Цена'
+        verbose_name_plural = 'Цены'

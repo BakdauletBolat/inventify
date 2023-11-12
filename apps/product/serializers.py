@@ -21,7 +21,6 @@ class ProductSerializer(serializers.Serializer):
 
     @staticmethod
     def get_stock_count(obj: Product):
-        stock_count = obj.stocks.aggregate(q=Sum("quantity"))
-        if stock_count['q'] is not None:
-            return stock_count['q']
-        return 0
+        stock_count = obj.stocks.aggregate(q=Sum("quantity", default=0))
+        return stock_count['q']
+
