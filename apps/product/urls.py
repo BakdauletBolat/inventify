@@ -1,7 +1,8 @@
+from django.urls import path
+
 from apps.product import views
-from rest_framework import routers
 
-router = routers.SimpleRouter()
-router.register('', views.ProductViewSet)
-
-urlpatterns = router.urls
+urlpatterns = [
+    path('', views.ProductViewSet.as_view(), name='create_list_product'),
+    path('<int:pk>/', views.ProductViewSet.as_view(), name='get_update_destroy_product'),
+]
