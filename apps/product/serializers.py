@@ -10,7 +10,7 @@ class ProductDetailSerializer(serializers.ModelSerializer):
         exclude = ('product',)
 
 
-class ProductImageSerializer(serializers.Serializer):
+class ProductImageSerializer(serializers.ModelSerializer):
     class Meta:
         model = ProductImage
         fields = '__all__'
@@ -22,7 +22,7 @@ class ProductSerializer(serializers.ModelSerializer):
     modification = ModificationSerializer()
     detail = ProductDetailSerializer()
     status = serializers.CharField(source='get_status_display')
-
+    pictures = ProductImageSerializer(many=True)
 
     @staticmethod
     def get_price(obj):

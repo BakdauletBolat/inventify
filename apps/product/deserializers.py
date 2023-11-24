@@ -1,8 +1,14 @@
 from rest_framework import serializers
 
-from apps.product.enums import StatusChoices
 from apps.product.models import Product
+from apps.product.models.Product import ProductImage
 from apps.product.serializers import ProductDetailSerializer
+
+
+class ProductImageDeSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ProductImage
+        fields = '__all__'
 
 
 class ProductDeSerializer(serializers.ModelSerializer):

@@ -53,6 +53,9 @@ class ProductImage(models.Model):
     image = models.ImageField(upload_to='ProductImage/')
     product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='pictures')
 
+    def __str__(self):
+        return self.product.name
+
     class Meta:
         verbose_name = 'Фото продукта'
         verbose_name_plural = 'Фото продуктов'
