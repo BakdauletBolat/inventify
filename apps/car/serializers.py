@@ -28,13 +28,12 @@ class ModificationSerializer(serializers.ModelSerializer):
     driveType = serializers.CharField()
     gearType = serializers.CharField()
     fuelType = serializers.CharField()
-    mileageType = serializers.CharField()
     bodyType = serializers.CharField()
     modelCar = ModelCarSerializer()
 
     @staticmethod
     def get_engines(obj):
-        return obj.engine.all()
+        return EngineSerializer(obj.engine.all(), many=True).data
 
     class Meta:
         model = Modification
