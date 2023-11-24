@@ -2,16 +2,19 @@ from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
+from inventify.yasg import urlpatterns as yasg_urlpatterns
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/', include([
         path('users/', include('users.urls')),
         path('product/', include('apps.product.urls')),
+        path('car/', include('apps.car.urls')),
         path('stock/', include('apps.stock.urls')),
         path('orders/', include('apps.order.urls'))
     ])),
 ]
+urlpatterns += yasg_urlpatterns
 
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
