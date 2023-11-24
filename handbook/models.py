@@ -8,7 +8,7 @@ User = settings.AUTH_USER_MODEL
 
 class Country(models.Model):
     name = models.CharField(max_length=255)
-    uid = models.CharField(max_length=255)
+    uid = models.CharField(max_length=255, null=True, blank=True)
 
     def __str__(self) -> str:
         return self.name
@@ -20,7 +20,7 @@ class Country(models.Model):
 
 class City(base_models.BaseModel):
     name = models.CharField(max_length=255)
-    uid = models.CharField(max_length=255)
+    uid = models.CharField(max_length=255, null=True, blank=True)
     country = models.ForeignKey(Country, on_delete=models.CASCADE)
 
     def __str__(self) -> str:
