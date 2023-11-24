@@ -18,7 +18,7 @@ class Product(BaseModel):
     properties = models.CharField(max_length=255, verbose_name='Свойства', null=True, blank=True)
     defect = models.CharField(max_length=255, verbose_name='Дефект', null=True, blank=True)
     comment = models.TextField(verbose_name='Комментарий', null=True, blank=True)
-    status = models.IntegerField(max_length=255, choices=StatusChoices.choices)
+    status = models.IntegerField(max_length=255, choices=StatusChoices.choices, default=StatusChoices.RAW.value)
 
     mileage = models.FloatField(null=True, blank=True)
     mileageType = models.ForeignKey(MileageType, verbose_name='Тип пробега', on_delete=models.SET_NULL, null=True,

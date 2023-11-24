@@ -21,6 +21,7 @@ class ProductSerializer(serializers.ModelSerializer):
     warehouse = serializers.CharField(read_only=True)
     modification = ModificationSerializer()
     detail = ProductDetailSerializer()
+    status = serializers.CharField(source='get_status_display')
 
 
     @staticmethod

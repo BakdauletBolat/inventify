@@ -7,7 +7,7 @@ from apps.product.serializers import ProductDetailSerializer
 
 class ProductDeSerializer(serializers.ModelSerializer):
     detail = ProductDetailSerializer()
-    status = serializers.ChoiceField(choices=StatusChoices.choices)
+    status = serializers.CharField(read_only=True)
     price = serializers.IntegerField(required=False, allow_null=True)
 
     class Meta:
