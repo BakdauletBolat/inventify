@@ -1,9 +1,10 @@
 from rest_framework import serializers
-from apps.stock import models
+
 from apps.product import serializers as product_serializers
+from apps.stock import models
+
 
 class QualitySerializer(serializers.ModelSerializer):
-
     class Meta:
         model = models.Quality
         fields = ('id', 'name')
