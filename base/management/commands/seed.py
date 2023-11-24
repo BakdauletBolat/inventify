@@ -50,7 +50,7 @@ def create_product(index):
                                      code=index,
                                      market_price=index * 10,
                                      status=status_rand[0],
-                                     modification=modifications
+                                     modification=random.choice(modifications)
                                      )
     Price.objects.create(cost=999 * index, product=product)
 
@@ -74,6 +74,8 @@ def create_modification():
     gear_types = []
     axles = [AxleConfiguration(name="Передняя"),
              AxleConfiguration(name="Задняя")]
+    mileages = [MileageType(name="km"),
+                MileageType(name="ml")]
 
     recar_request = RecarRequest()
     categories_data = recar_request.get_categories()
@@ -126,6 +128,7 @@ def create_modification():
     FuelType.objects.bulk_create(fuel_types, **bulk_create_options)
     GearType.objects.bulk_create(gear_types, **bulk_create_options)
     SteeringType.objects.bulk_create(steering_types, **bulk_create_options)
+    MileageType.objects.bulk_create(mileages, **bulk_create_options)
 
 
 def run_seed(self, mode):
