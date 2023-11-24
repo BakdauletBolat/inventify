@@ -4,7 +4,7 @@ from django.core.management.base import BaseCommand
 from loguru import logger
 
 from apps.car.models.Model import *
-from apps.car.models.Modification import Modification, Engine
+from apps.car.models.Modification import Modification
 from apps.car.models.ModificationDetails import *
 from apps.category.models import Category
 from apps.product.enums import StatusChoices
@@ -13,8 +13,7 @@ from apps.product.models.Product import Product
 from base.requests import RecarRequest
 from users.models import User
 
-models = [Product, Engine, PlatformType, SuspensionType, MileageType,
-          ModelCar, Price, Modification]
+models = [Product, PlatformType, Price]
 # python manage.py seed --mode=refresh
 
 MODE_REFRESH = 'refresh'
@@ -43,25 +42,15 @@ def clear_data():
 
 
 def create_product(index):
-    axles = AxleConfiguration.objects.all()
-    bodies = BodyType.objects.all()
-    drives = DriveType.objects.all()
-    fuel_types = FuelType.objects.all()
-    gears = GearType.objects.all()
+    modifications = Modification.objects.all()
 
     status_rand = random.choice(StatusChoices.choices)
-    modification = Modification.objects.create(axleConfiguration=random.choice(axles),
-                                               bodyType=random.choice(bodies),
-                                               driveType=random.choice(drives),
-                                               fuelType=random.choice(fuel_types),
-                                               gearType=random.choice(gears),
-                                               name=f"modification-{index}"
-                                               )
+
     product = Product.objects.create(name=f"Product-{index}",
                                      code=index,
                                      market_price=index * 10,
                                      status=status_rand[0],
-                                     modification=modification
+                                     modification=modifications
                                      )
     Price.objects.create(cost=999 * index, product=product)
 
