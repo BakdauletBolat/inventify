@@ -34,7 +34,7 @@ class User(AbstractUser):
     last_name = models.CharField('Фамилия', max_length=255)
     middle_name = models.CharField('Отчество', max_length=255, null=True, blank=True)
 
-    profile_type = models.IntegerField(choices=PROFILE_TYPES.choices, default=PROFILE_TYPES.CLIENT, max_length=100)
+    profile_type = models.IntegerField(choices=PROFILE_TYPES.choices, default=PROFILE_TYPES.CLIENT)
     city = models.ForeignKey(City, on_delete=models.CASCADE, related_name='users', null=True, blank=True,
                              verbose_name='Город')
     postcode = models.CharField('Почтовый индекс', max_length=255, null=True, blank=True)

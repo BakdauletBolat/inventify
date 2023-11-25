@@ -2,6 +2,7 @@ from django.db import models
 
 from apps.product.models import Product
 from base import models as base_models
+from handbook.models import City
 
 
 class Quality(base_models.BaseModel):
@@ -17,6 +18,7 @@ class Quality(base_models.BaseModel):
 
 class Warehouse(base_models.BaseModel):
     name = models.CharField(max_length=255)
+    city = models.ForeignKey(City, on_delete=models.SET_NULL, null=True, blank=True)
 
     def __str__(self):
         return self.name
@@ -29,7 +31,7 @@ class Warehouse(base_models.BaseModel):
 class Stock(base_models.BaseModel):
     product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='stocks')
     warehouse = models.ForeignKey(Warehouse, on_delete=models.CASCADE)
-    quality = models.ForeignKey(Quality, on_delete=models.CASCADE)
+    quality = models.ForeignKey(Quality, on_delete=models.SET_NULL, null=True, blank=True)
     quantity = models.PositiveIntegerField(default=0)
     min_stock_level = models.PositiveIntegerField(default=10)
 
