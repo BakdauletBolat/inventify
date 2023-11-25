@@ -5,11 +5,13 @@ from rest_framework_simplejwt.views import (
 )
 
 from users.views import (UserListCreateView,
-                         UserRetrieveUpdateDestroyAPIView)
+                         UserRetrieveUpdateDestroyAPIView,
+                         UsersMe)
 
 jwt_url = [
     path('token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
-    path('token/refresh/', TokenRefreshView.as_view(), name='token_refresh')
+    path('token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
+    path('me/', UsersMe.as_view(), name='me')
 ]
 
 user_url = [

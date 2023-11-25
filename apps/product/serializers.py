@@ -1,26 +1,34 @@
-from django.db.models import Count, Sum
 from rest_framework import serializers
 
-from apps.product.models import Product
+from apps.car.serializers import ModificationSerializer
+from apps.product.models.Product import *
 
 
-class ProductImageSerializer(serializers.Serializer):
-    image = serializers.ImageField()
-    id = serializers.IntegerField()
+class ProductDetailSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ProductDetail
+        exclude = ('product',)
 
 
-class ProductSerializer(serializers.Serializer):
-    id = serializers.IntegerField()
-    name = serializers.CharField()
-    sku = serializers.CharField()
-    price = serializers.IntegerField(source='prices.last.cost')
-    supplier_id = serializers.IntegerField()
-    stock_count = serializers.SerializerMethodField()
-    picture = serializers.ImageField(source='pictures.first.image', allow_null=True, default=None)
+class ProductImageSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ProductImage
+        fields = '__all__'
+
+
+class ProductSerializer(serializers.ModelSerializer):
+    price = serializers.SerializerMethodField()
+    warehouse = serializers.CharField(read_only=True)
+    modification = ModificationSerializer()
+    detail = ProductDetailSerializer()
+    status = serializers.CharField(source='get_status_display')
     pictures = ProductImageSerializer(many=True)
 
     @staticmethod
-    def get_stock_count(obj: Product):
-        stock_count = obj.stocks.aggregate(q=Sum("quantity", default=0))
-        return stock_count['q']
+    def get_price(obj):
+        return getattr(obj.price.last(), 'cost', None)
 
+    class Meta:
+        model = Product
+        fields = '__all__'
+        read_only_fields = ['pictures', 'warehouse']

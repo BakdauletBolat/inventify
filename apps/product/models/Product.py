@@ -1,15 +1,29 @@
 from django.contrib.contenttypes.fields import GenericRelation
-from django.db import models
-from django.db.models.signals import m2m_changed, post_save
-from django.dispatch import receiver
 
+from apps.car.models.Modification import Modification
+from apps.car.models.ModificationDetails import *
+from apps.product.enums import StatusChoices
+from base.models import BaseModel
 from history.models.History import History
-from history.services.create_history import create_history
 
 
-class Product(models.Model):
+class Product(BaseModel):
     name = models.CharField(max_length=255, verbose_name='Наименование')
-    code = models.CharField(max_length=255, verbose_name='Код')
+    code = models.CharField(max_length=255, verbose_name='Код', null=True, blank=True)
+    market_price = models.IntegerField(default=0, verbose_name='Рыночная цена', null=True, blank=True)
+
+    warehouse = models.ForeignKey('stock.Warehouse', blank=True, null=True, on_delete=models.SET_NULL)
+    modification = models.ForeignKey(Modification, blank=True, null=True, on_delete=models.SET_NULL)
+
+    properties = models.CharField(max_length=255, verbose_name='Свойства', null=True, blank=True)
+    defect = models.CharField(max_length=255, verbose_name='Дефект', null=True, blank=True)
+    comment = models.TextField(verbose_name='Комментарий', null=True, blank=True)
+    status = models.IntegerField(choices=StatusChoices.choices, default=StatusChoices.RAW.value)
+
+    mileage = models.FloatField(null=True, blank=True)
+    mileageType = models.ForeignKey(MileageType, verbose_name='Тип пробега', on_delete=models.SET_NULL, null=True,
+                                    blank=True)
+
     histories = GenericRelation(History)
 
     def __str__(self):
@@ -25,11 +39,11 @@ class ProductDetail(models.Model):
     width = models.FloatField(verbose_name='Ширина', null=True, blank=True)
     length = models.FloatField(verbose_name='Длина', null=True, blank=True)
     weight = models.FloatField(verbose_name='Вес', null=True, blank=True)
-    product = models.ForeignKey(Product, verbose_name='Продукт', on_delete=models.CASCADE)
+    product = models.OneToOneField(Product, verbose_name='Продукт', on_delete=models.CASCADE, related_name='detail')
 
     class Meta:
-        verbose_name = 'Детлаи продукта'
-        verbose_name_plural = 'Детлаи продукта'
+        verbose_name = 'Детали продукта'
+        verbose_name_plural = 'Детали продукта'
 
     def __str__(self):
         return self.product.name
@@ -38,6 +52,9 @@ class ProductDetail(models.Model):
 class ProductImage(models.Model):
     image = models.ImageField(upload_to='ProductImage/')
     product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='pictures')
+
+    def __str__(self):
+        return self.product.name
 
     class Meta:
         verbose_name = 'Фото продукта'
