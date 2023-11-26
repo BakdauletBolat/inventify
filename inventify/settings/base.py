@@ -2,11 +2,11 @@ import os
 from datetime import timedelta
 from pathlib import Path
 
-BASE_DIR = Path(__file__).resolve().parent.parent
+BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
 SECRET_KEY = 'django-insecure-wu!87*y!!e400jzbdhe2_fmwpa_dr!r)u8@t@e2ylx(nq*p8*!'
 
-DEBUG = True
+DEBUG = os.environ.get('DEBUG', 1)
 
 ALLOWED_HOSTS = ['*']
 
