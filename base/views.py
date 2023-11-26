@@ -5,9 +5,13 @@ from rest_framework.views import APIView
 class BaseAPIView(APIView):
     deserializer_class = None
     serializer_class = None
+    pagination_class = None
 
     def get_deserializer(self, *args, **kwargs):
         return self.deserializer_class(*args, **kwargs)
 
     def get_serializer(self, *args, **kwargs):
         return self.serializer_class(*args, **kwargs)
+
+    def get_pagination(self, *args, **kwargs):
+        return self.pagination_class(*args, **kwargs)

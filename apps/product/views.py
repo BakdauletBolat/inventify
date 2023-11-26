@@ -10,6 +10,7 @@ from apps.product.deserializers import ProductImageDeSerializer
 from apps.product.models.Product import Product, ProductImage
 from apps.product.repository import ProductRepository
 from apps.product.serializers import ProductImageSerializer
+from base.paginations import CustomPageNumberPagination
 from base.views import BaseAPIView
 
 
@@ -17,6 +18,7 @@ class ProductViewSet(BaseAPIView):
     queryset = Product.objects.all()
     deserializer_class = deserializers.ProductDeSerializer
     serializer_class = serializers.ProductSerializer
+    pagination_class = CustomPageNumberPagination
 
     def post(self, request, *args, **kwargs):
         serializer = self.get_deserializer(data=request.data)
@@ -26,8 +28,11 @@ class ProductViewSet(BaseAPIView):
 
     def get(self, request, *args, **kwargs):
         if kwargs.get('pk', None) is None:
-            return Response(self.get_serializer(self.queryset.all(), many=True, context={"request": request}).data,
-                            status=status.HTTP_200_OK)
+            pagination = self.get_pagination()
+            page = pagination.paginate_queryset(self.queryset.all(), request)
+            serializer = self.get_serializer(page, many=True, context={"request": request})
+            return pagination.get_paginated_response(serializer.data)
+
         instance = get_object_or_404(self.queryset, **kwargs)
         serializer = self.get_serializer(instance, context={"request": request})
         return Response(serializer.data, status=status.HTTP_200_OK)
