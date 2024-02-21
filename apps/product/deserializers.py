@@ -1,5 +1,7 @@
 from rest_framework import serializers
 
+from apps.car.models.ModificationDetails import OemCodes
+from apps.car.serializers import OemCodesCreateIfNotExistField
 from apps.product.models import Product
 from apps.product.models.Product import ProductImage
 from apps.product.serializers import ProductDetailSerializer
@@ -15,6 +17,7 @@ class ProductDeSerializer(serializers.ModelSerializer):
     detail = ProductDetailSerializer()
     status = serializers.CharField(read_only=True)
     price = serializers.IntegerField(required=False, allow_null=True)
+    code = OemCodesCreateIfNotExistField()
 
     class Meta:
         model = Product

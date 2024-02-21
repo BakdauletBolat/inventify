@@ -19,13 +19,16 @@ class PriceTabularInline(admin.TabularInline):
     extra = 0
 
 
-class ProducAdmin(admin.ModelAdmin):
-    list_display = ('id', 'name',)
+class ProductAdmin(admin.ModelAdmin):
+    list_display = ('id', 'name', 'get_last_price')
     raw_id_fields = ('modification',)
     inlines = [ProductImageTabularInline, ProductDetailTabularInline, PriceTabularInline]
 
+    def get_last_price(self, product):
+        return product.price.last()
+
 
 admin.site.register(Price)
-admin.site.register(Product, ProducAdmin)
+admin.site.register(Product, ProductAdmin)
 admin.site.register(ProductImage)
 admin.site.register(ProductDetail)

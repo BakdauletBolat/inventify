@@ -109,3 +109,14 @@ class MileageType(models.Model):
     class Meta:
         verbose_name = 'Тип пробега'
         verbose_name_plural = 'Типы пробега'
+
+
+class OemCodes(models.Model):
+    code = models.CharField(max_length=255)
+
+    def __str__(self):
+        return self.code
+
+    class Meta:
+        verbose_name = 'OEM коды'
+        verbose_name_plural = 'OEM коды'

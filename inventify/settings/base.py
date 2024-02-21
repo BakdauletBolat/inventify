@@ -83,7 +83,7 @@ DATABASES = {
     "default": {
         "ENGINE": os.environ.get("SQL_ENGINE", "django.db.backends.postgresql"),
         "NAME": os.environ.get("SQL_DATABASE", "inventify"),
-        "USER": os.environ.get("SQL_USER", "inventify_user"),
+        "USER": os.environ.get("SQL_USER", "inventify"),
         "PASSWORD": os.environ.get("SQL_PASSWORD", "123"),
         "HOST": os.environ.get("SQL_HOST", "localhost"),
         "PORT": os.environ.get("SQL_PORT", "5432"),
