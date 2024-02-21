@@ -10,8 +10,12 @@ class ProductRepository(BaseRepository):
     @classmethod
     def create(cls, **kwargs):
         product_detail = kwargs.pop('detail')
+        categories = kwargs.pop('category')
+        oem_codes = kwargs.pop('code')
         Price.objects.create(cost=kwargs.pop('price'))
         product = cls.model.objects.create(**kwargs)
+        product.category.add(*categories)
+        product.code.add(*oem_codes)
 
         product_detail['product'] = product
         ProductDetail.objects.create(**product_detail)

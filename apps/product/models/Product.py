@@ -2,6 +2,7 @@ from django.contrib.contenttypes.fields import GenericRelation
 
 from apps.car.models.Modification import Modification
 from apps.car.models.ModificationDetails import *
+from apps.category.models import Category
 from apps.product.enums import StatusChoices
 from base.models import BaseModel
 from history.models.History import History
@@ -9,11 +10,13 @@ from history.models.History import History
 
 class Product(BaseModel):
     name = models.CharField(max_length=255, verbose_name='Наименование')
-    code = models.CharField(max_length=255, verbose_name='Код', null=True, blank=True)
+    code = models.ManyToManyField(OemCodes, null=True, blank=True)
     market_price = models.IntegerField(default=0, verbose_name='Рыночная цена', null=True, blank=True)
 
     warehouse = models.ForeignKey('stock.Warehouse', blank=True, null=True, on_delete=models.SET_NULL)
     modification = models.ForeignKey(Modification, blank=True, null=True, on_delete=models.SET_NULL)
+    category = models.ManyToManyField(Category, blank=True, null=True)
+    color = models.ForeignKey(ColorType, null=True, blank=True, on_delete=models.CASCADE)
 
     properties = models.CharField(max_length=255, verbose_name='Свойства', null=True, blank=True)
     defect = models.CharField(max_length=255, verbose_name='Дефект', null=True, blank=True)

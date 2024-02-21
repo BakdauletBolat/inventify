@@ -1,3 +1,4 @@
+from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import status
 from rest_framework.generics import get_object_or_404
 from rest_framework.parsers import MultiPartParser, FormParser
@@ -7,6 +8,7 @@ from apps.product import deserializers
 from apps.product import serializers
 from apps.product.actions import CreateProductAction, UpdateProductAction
 from apps.product.deserializers import ProductImageDeSerializer
+from apps.product.filters import ProductFilters
 from apps.product.models.Product import Product, ProductImage
 from apps.product.repository import ProductRepository
 from apps.product.serializers import ProductImageSerializer
@@ -19,6 +21,9 @@ class ProductViewSet(BaseAPIView):
     deserializer_class = deserializers.ProductDeSerializer
     serializer_class = serializers.ProductSerializer
     pagination_class = CustomPageNumberPagination
+    filter_backends = [DjangoFilterBackend]
+    filterset_class = ProductFilters
+
 
     def post(self, request, *args, **kwargs):
         serializer = self.get_deserializer(data=request.data)
@@ -28,8 +33,9 @@ class ProductViewSet(BaseAPIView):
 
     def get(self, request, *args, **kwargs):
         if kwargs.get('pk', None) is None:
+            self.queryset = self.filterset_class(request.GET, self.queryset.all()).qs
             pagination = self.get_pagination()
-            page = pagination.paginate_queryset(self.queryset.all(), request)
+            page = pagination.paginate_queryset(self.queryset, request)
             serializer = self.get_serializer(page, many=True, context={"request": request})
             return pagination.get_paginated_response(serializer.data)
 

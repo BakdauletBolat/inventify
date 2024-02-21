@@ -26,6 +26,13 @@ class ProductImageSerializer(serializers.ModelSerializer):
 class ProductSerializer(serializers.ModelSerializer):
     price = serializers.SerializerMethodField()
     warehouse = serializers.CharField(read_only=True)
+    color = serializers.CharField(read_only=True)
+    category = serializers.StringRelatedField(read_only=True,
+                                              many=True
+                                              )
+    code = serializers.StringRelatedField(read_only=True,
+                                              many=True
+                                              )
     modification = ModificationSerializer()
     detail = ProductDetailSerializer()
     status = serializers.CharField(source='get_status_display')
