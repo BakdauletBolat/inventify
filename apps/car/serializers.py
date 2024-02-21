@@ -2,6 +2,7 @@ from rest_framework import serializers
 
 from apps.car.models.Model import ModelCar, ManufacturerType
 from apps.car.models.Modification import Modification, Engine
+from apps.car.models.ModificationDetails import OemCodes
 
 
 class ManufacturerTypeSerializer(serializers.ModelSerializer):
@@ -38,3 +39,21 @@ class ModificationSerializer(serializers.ModelSerializer):
     class Meta:
         model = Modification
         fields = '__all__'
+
+
+class OemCodesCreateIfNotExistField(serializers.ListSerializer):
+    child = serializers.CharField()
+
+    def to_internal_value(self, data):
+        oem_codes = []
+        for code in data:
+            try:
+                # Пытаемся найти объект OemCodes по коду
+                oem_code = OemCodes.objects.get(code=code)
+                oem_codes.append(oem_code)
+            except OemCodes.DoesNotExist:
+                # Если объект не найден, создаем новый
+                oem_code = OemCodes.objects.create(code=code)
+                oem_codes.append(oem_code)
+        return oem_codes
+
