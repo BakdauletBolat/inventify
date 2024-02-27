@@ -124,7 +124,7 @@ class ImportProductAction:
                                                     })
         category = product_data.get('category', '')
 
-        return Product(
+        product = Product(
             name=category.get('name', ''),
             warehouse=warehouse,
             modification=self.get_modification(product_data),
@@ -133,6 +133,8 @@ class ImportProductAction:
             comment=product_data.get('comment', ''),
             status=StatusChoices.IN_STOCK.value if product_data.get('status') == 'in_stock' else StatusChoices.RAW.value
         )
+
+        return product
 
     @staticmethod
     def get_modification(product_data: dict) -> Modification:
