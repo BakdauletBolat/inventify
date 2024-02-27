@@ -68,21 +68,21 @@ class StockReceipt(base_models.BaseModel):
         verbose_name_plural = 'Приемка'
 
     def save(self, *args, **kwargs):
-        stock, created = Stock.objects.get_or_create(product=self.product, warehouse=self.warehouse,
-                                                     quality=self.quality)
-        stock.quantity += self.quantity
-        stock.save()
-        stock_history = StockHistory(
-            stock=stock,
-            quantity_before=stock.quantity,
-            quantity_after=stock.quantity + self.quantity
-        )
-        stock_history.save()
+        # stock, created = Stock.objects.get_or_create(product=self.product, warehouse=self.warehouse,
+        #                                              quality=self.quality)
+        # stock.quantity += self.quantity
+        # stock.save()
+        # stock_history = StockHistory(
+        #     stock=stock,
+        #     quantity_before=stock.quantity,
+        #     quantity_after=stock.quantity + self.quantity
+        # )
+        # stock_history.save()
         super(StockReceipt, self).save(*args, **kwargs)
 
     def delete(self, using=None, keep_parents=False):
-        stock, created = Stock.objects.get_or_create(product=self.product, warehouse=self.warehouse,
-                                                     quality=self.quality)
-        stock.quantity -= self.quantity
-        stock.save()
+        # stock, created = Stock.objects.get_or_create(product=self.product, warehouse=self.warehouse,
+        #                                              quality=self.quality)
+        # stock.quantity -= self.quantity
+        # stock.save()
         super(StockReceipt, self).delete()

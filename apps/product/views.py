@@ -7,11 +7,9 @@ from rest_framework.response import Response
 from apps.product import deserializers
 from apps.product import serializers
 from apps.product.actions import CreateProductAction, UpdateProductAction
-from apps.product.deserializers import ProductImageDeSerializer
 from apps.product.filters import ProductFilters
 from apps.product.models.Product import Product, ProductImage
 from apps.product.repository import ProductRepository
-from apps.product.serializers import ProductImageSerializer
 from base.paginations import CustomPageNumberPagination
 from base.views import BaseAPIView
 
@@ -23,7 +21,6 @@ class ProductViewSet(BaseAPIView):
     pagination_class = CustomPageNumberPagination
     filter_backends = [DjangoFilterBackend]
     filterset_class = ProductFilters
-
 
     def post(self, request, *args, **kwargs):
         serializer = self.get_deserializer(data=request.data)
@@ -58,8 +55,8 @@ class ProductViewSet(BaseAPIView):
 
 class ProductImageView(BaseAPIView):
     parser_classes = (MultiPartParser, FormParser)
-    deserializer_class = ProductImageDeSerializer
-    serializer_class = ProductImageSerializer
+    deserializer_class = deserializers.ProductImageDeSerializer
+    serializer_class = serializers.ProductImageSerializer
     queryset = ProductImage.objects.all()
 
     def post(self, request, *args, **kwargs):

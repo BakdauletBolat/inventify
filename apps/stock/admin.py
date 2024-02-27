@@ -7,6 +7,7 @@ admin.site.register(models.Warehouse)
 
 
 class StockAdmin(admin.ModelAdmin):
+    list_display = ('id', 'product', 'warehouse', 'quality', 'quantity', 'min_stock_level')
 
     def has_delete_permission(self, request, obj=None):
         return False
@@ -18,7 +19,11 @@ class StockAdmin(admin.ModelAdmin):
         return False
 
 
+class StockHistoryAdmin(admin.ModelAdmin):
+    list_display = ('id', 'stock', 'quantity_before', 'quantity_after',)
+
+
 admin.site.register(models.Stock, StockAdmin)
 admin.site.register(models.Quality)
-admin.site.register(models.StockHistory)
+admin.site.register(models.StockHistory, StockHistoryAdmin)
 admin.site.register(models.StockReceipt)
