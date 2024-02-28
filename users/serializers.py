@@ -3,7 +3,8 @@ from django.contrib.auth.password_validation import validate_password
 from rest_framework import serializers
 
 from handbook.models import City
-from users.models import User
+from users.models.Address import Address
+from users.models.User import User
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -13,7 +14,7 @@ class UserSerializer(serializers.ModelSerializer):
         model = User
         extra_kwargs = {
             "profile_type": {"required": True},
-            "password": {"write_only": True}
+            "password": {"write_only": True, 'required': False}
         }
         exclude = ('groups', 'user_permissions')
 
@@ -28,3 +29,12 @@ class UserRegisterSerializer(UserSerializer):
         attrs['password'] = make_password(attrs['password'])
         attrs.pop('password2')
         return attrs
+
+
+class AddressSerializer(serializers.ModelSerializer):
+    user = UserSerializer()
+    street = serializers.CharField(write_only=True, required=True)
+
+    class Meta:
+        model = Address
+        exclude = ('city',)

@@ -1,4 +1,4 @@
-from users.models import User
+from users.models.User import User
 from users.repository import UserRepository
 from users.serializers import UserRegisterSerializer
 
