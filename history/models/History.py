@@ -3,7 +3,7 @@ from django.contrib.contenttypes.models import ContentType
 from django.db import models
 
 from base.models import BaseModel
-from users.models import User
+from users.models.User import User
 
 
 class History(BaseModel):

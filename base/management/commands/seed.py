@@ -11,7 +11,7 @@ from apps.product.enums import StatusChoices
 from apps.product.models.Price import Price
 from apps.product.models.Product import Product
 from base.requests import RecarRequest
-from users.models import User
+from users.models.User import User
 
 models = [Product, PlatformType, Price]
 # python manage.py seed --mode=refresh

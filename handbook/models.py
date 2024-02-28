@@ -29,23 +29,3 @@ class City(base_models.BaseModel):
     class Meta:
         verbose_name = 'Город'
         verbose_name_plural = 'Города'
-
-
-class Address(models.Model):
-    address = models.CharField('Адрес', max_length=255)
-    address1 = models.CharField('Адрес Доп', max_length=255, null=True, blank=True)
-    street = models.CharField('Улица', max_length=255, null=True, blank=True)
-    apartment = models.CharField('Квартира', max_length=255, null=True, blank=True)
-    floor = models.CharField('Этаж', max_length=255, null=True, blank=True)
-    entrance = models.CharField('Подъезд', max_length=255, null=True, blank=True)
-    building = models.CharField('Дом', max_length=255, null=True, blank=True)
-    coords = models.JSONField('Кордината', max_length=255, null=True, blank=True)
-    city = models.ForeignKey(City, null=True, blank=True, on_delete=models.CASCADE, related_name='addresses')
-    user = models.ForeignKey(User, null=True, blank=True, on_delete=models.CASCADE, related_name='addresses')
-
-    def __str__(self):
-        return self.address
-
-    class Meta:
-        verbose_name = 'Адрес'
-        verbose_name_plural = 'Адрес'
