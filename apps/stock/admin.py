@@ -3,7 +3,12 @@ from django.contrib import admin
 # Register your models here.
 from apps.stock import models
 
-admin.site.register(models.Warehouse)
+
+class WarehouseAdmin(admin.ModelAdmin):
+    list_display = ('id', 'name')
+
+
+admin.site.register(models.Warehouse, WarehouseAdmin)
 
 
 class StockAdmin(admin.ModelAdmin):

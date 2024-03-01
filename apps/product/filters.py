@@ -11,6 +11,7 @@ class ProductFilters(django_filters.FilterSet):
     body_type = django_filters.BaseInFilter(field_name='modification__bodyType')
     fuel_type = django_filters.BaseInFilter(field_name='modification__fuelType')
     gear_type = django_filters.BaseInFilter(field_name='modification__gearType')
+    manufacturer = django_filters.BaseInFilter(field_name='modification__modelCar__manufacturer')
 
     class Meta:
         model = Product

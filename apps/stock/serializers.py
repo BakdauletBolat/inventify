@@ -1,5 +1,6 @@
 from rest_framework import serializers
 
+from apps.category.serializers import CategorySerializer
 from apps.product import serializers as product_serializers
 from apps.stock import models
 
@@ -11,9 +12,13 @@ class QualitySerializer(serializers.ModelSerializer):
 
 
 class WareHouseSerializer(serializers.ModelSerializer):
+    category_ids = serializers.ListField(child=serializers.IntegerField(), write_only=True, required=False,
+                                         source='products_category')
+    categories = CategorySerializer(many=True, source='products_category', read_only=True)
+
     class Meta:
         model = models.Warehouse
-        fields = ('id', 'name',)
+        fields = ('id', 'name', 'categories', 'category_ids')
 
 
 class StockReceiptSerializer(serializers.ModelSerializer):

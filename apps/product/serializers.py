@@ -27,9 +27,7 @@ class ProductSerializer(serializers.ModelSerializer):
     price = serializers.SerializerMethodField()
     warehouse = serializers.CharField(read_only=True)
     color = serializers.CharField(read_only=True)
-    category = serializers.StringRelatedField(read_only=True,
-                                              many=True
-                                              )
+    category = serializers.CharField(read_only=True)
     code = serializers.StringRelatedField(read_only=True,
                                               many=True
                                               )

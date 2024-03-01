@@ -1,5 +1,6 @@
 from django.db import models
 
+from apps.category.models import Category
 from apps.product.models import Product
 from base import models as base_models
 from handbook.models import City
@@ -19,6 +20,7 @@ class Quality(base_models.BaseModel):
 class Warehouse(base_models.BaseModel):
     name = models.CharField(max_length=255)
     city = models.ForeignKey(City, on_delete=models.SET_NULL, null=True, blank=True)
+    products_category = models.ManyToManyField(Category, null=True, blank=True)
 
     def __str__(self):
         return self.name
