@@ -15,7 +15,7 @@ class Product(BaseModel):
 
     warehouse = models.ForeignKey('stock.Warehouse', blank=True, null=True, on_delete=models.SET_NULL)
     modification = models.ForeignKey(Modification, blank=True, null=True, on_delete=models.SET_NULL)
-    category = models.ManyToManyField(Category, blank=True, null=True)
+    category = models.ForeignKey(Category, blank=True, null=True, on_delete=models.CASCADE)
     color = models.ForeignKey(ColorType, null=True, blank=True, on_delete=models.CASCADE)
 
     properties = models.CharField(max_length=255, verbose_name='Свойства', null=True, blank=True)

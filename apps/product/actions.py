@@ -1,11 +1,15 @@
-from django.db import transaction
+import requests
+from django.core.files.base import ContentFile
+from django.db import transaction, utils
 
 from apps.car.actions.ImportModifcation import ImportModification
 from apps.car.models.Modification import Modification
-from apps.product.enums import StatusChoices
+from apps.product.enums import StatusChoicesRecar
 from apps.product.models import Product
+from apps.product.models.Price import Price
+from apps.product.models.Product import ProductDetail, ProductImage
 from apps.product.repository import ProductRepository
-from apps.stock.models import Warehouse
+from base.requests import RecarRequest
 
 
 class CreateProductAction:
@@ -31,35 +35,55 @@ class UpdateProductAction:
 
 
 class ImportProductAction:
-    def run(self, product_data: dict) -> Product:
+    @transaction.atomic()
+    def run(self, product_id: int):
+        try:
+            request = RecarRequest()
+            product_data = request.get_product(product_id)
+            modificaiton = request.get_product_modification(product_id)
+            product = Product.objects.create(
+                id=product_data['id'],
+                name=product_data['category']['name'],
+                market_price=product_data['suggestedPrice'],
+                category_id=product_data['category']['id'],
+                # color=
+                defect=product_data['defectComment'],
+                comment=product_data['comment'],
+                # status=StatusChoicesRecar
+                # mileage=
+                # mileageType=
+                modification_id=self.get_modification_id(modificaiton),
+                warehouse_id=product_data['location']['id']
+            )
 
-        warehouse = Warehouse.objects.get_or_create(id=product_data.get('id'),
-                                                    defaults={
-                                                        "name": product_data.get('name')
-                                                    })
-        category = product_data.get('category', '')
+            ProductDetail.objects.create(
+                height=product_data['height'],
+                width=product_data['width'],
+                length=product_data['length'],
+                weight=product_data['weight'],
+                product=product
+            )
 
-        product = Product(
-            name=category.get('name', ''),
-            warehouse=warehouse,
-            modification=self.get_modification(product_data),
-            category_id=category.get('id', None),
-            defect=product_data.get('defectComment', ''),
-            comment=product_data.get('comment', ''),
-            status=StatusChoices.IN_STOCK.value if product_data.get('status') == 'in_stock' else StatusChoices.RAW.value
-        )
+            Price.objects.create(
+                product=product,
+                cost=0 if product_data.get('price') is None else product_data.get('price'),
+            )
 
-        return product
+            for product_image in product_data['inputParent']['picturesV2']:
+                image_url = product_image['optimized']
+                response = requests.get(image_url)
+                product_image = ProductImage(product=product)
+                product_image.image.save(image_url.split("/")[-1], ContentFile(response.content))
+
+        except utils.IntegrityError as exc:
+            print(exc)
 
     @staticmethod
-    def get_modification(product_data: dict) -> Modification:
-        modification_id = product_data['vehicleSpecifications']['modification']['id']
-        modification = None
+    def get_modification_id(modification_data: dict) -> Modification:
 
         try:
-            modification = Modification.objects.get(id=modification_id)
-        except modification.DoesNotExist:
-            ImportModification().run(product_data['vehicleSpecifications']['model']['id'])
-            modification = Modification.objects.get(id=modification_id)
+            modification = Modification.objects.get(id=modification_data['id'])
+        except Modification.DoesNotExist:
+            ImportModification().run(modification_data['modelId'])
 
-        return modification
+        return modification_data['id']
