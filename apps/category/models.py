@@ -7,7 +7,9 @@ from base.models import BaseModel
 
 class Category(BaseModel):
     name = models.CharField(max_length=255)
-    parent = models.ForeignKey('self', on_delete=models.SET_NULL, null=True, blank=True)
+    parent = models.ForeignKey('self', on_delete=models.SET_NULL, null=True, blank=True, related_name='children')
+    recar_category_id = models.IntegerField(null=True, blank=True, verbose_name='Категория из Рекар')
+
 
     def __str__(self):
         return self.name
