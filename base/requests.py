@@ -239,7 +239,7 @@ class RecarRequest(Request):
             "operationName": "FetchParts",
             "variables": {
                 "payload": {
-                    "statuses": ["in_stock", "reserved", "not_parsed"],
+                    "statuses": ["in_stock", "reserved", "not_parsed", "sold"],
                     "defaultQuery": False,
                     "departmentIds": "9182",
                     "partnership": False
