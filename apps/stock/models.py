@@ -2,6 +2,7 @@ from django.db import models
 
 from apps.category.models import Category
 from apps.product.models import Product
+from apps.stock.enums import MovementEnum
 from base import models as base_models
 from handbook.models import City
 
@@ -21,6 +22,7 @@ class Warehouse(base_models.BaseModel):
     name = models.CharField(max_length=255)
     city = models.ForeignKey(City, on_delete=models.SET_NULL, null=True, blank=True)
     products_category = models.ManyToManyField(Category, null=True, blank=True)
+    min_stock_level = models.PositiveIntegerField(default=0, null=True)
 
     def __str__(self):
         return self.name
@@ -32,10 +34,9 @@ class Warehouse(base_models.BaseModel):
 
 class Stock(base_models.BaseModel):
     product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='stocks')
-    warehouse = models.ForeignKey(Warehouse, on_delete=models.CASCADE)
+    warehouse = models.ForeignKey(Warehouse, on_delete=models.CASCADE, null=True, blank=True)
     quality = models.ForeignKey(Quality, on_delete=models.SET_NULL, null=True, blank=True)
     quantity = models.PositiveIntegerField(default=0)
-    min_stock_level = models.PositiveIntegerField(default=10)
 
     class Meta:
         unique_together = ('product', 'quality', 'warehouse')
@@ -56,9 +57,10 @@ class StockHistory(base_models.BaseModel):
         verbose_name_plural = 'История остатков'
 
 
-class StockReceipt(base_models.BaseModel):
+class StockMovement(base_models.BaseModel):
     product = models.ForeignKey(Product, on_delete=models.CASCADE)
     warehouse = models.ForeignKey(Warehouse, on_delete=models.CASCADE)
+    movement_type = models.IntegerField('Тип движения', choices=MovementEnum.choices)
     quality = models.ForeignKey(Quality, on_delete=models.CASCADE)
     quantity = models.PositiveIntegerField()
 
@@ -66,8 +68,8 @@ class StockReceipt(base_models.BaseModel):
         return f"{self.quantity} единиц продукта {self.product.name} поступило на склад {self.warehouse.name}"
 
     class Meta:
-        verbose_name = 'Приемка'
-        verbose_name_plural = 'Приемка'
+        verbose_name = 'Движение остатков'
+        verbose_name_plural = 'Движение остатков'
 
     def save(self, *args, **kwargs):
         # stock, created = Stock.objects.get_or_create(product=self.product, warehouse=self.warehouse,
@@ -80,11 +82,11 @@ class StockReceipt(base_models.BaseModel):
         #     quantity_after=stock.quantity + self.quantity
         # )
         # stock_history.save()
-        super(StockReceipt, self).save(*args, **kwargs)
+        super(StockMovement, self).save(*args, **kwargs)
 
     def delete(self, using=None, keep_parents=False):
         # stock, created = Stock.objects.get_or_create(product=self.product, warehouse=self.warehouse,
         #                                              quality=self.quality)
         # stock.quantity -= self.quantity
         # stock.save()
-        super(StockReceipt, self).delete()
+        super(StockMovement, self).delete()

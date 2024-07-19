@@ -1,7 +1,8 @@
 from django.urls import path
 
-from apps.category.views import CategoryListAPIView
+from apps.category import views
 
 urlpatterns = [
-    path('', CategoryListAPIView.as_view())
+    path('', views.CategoryListAPIView.as_view()),
+    path('tree/', views.CategoryTreeAPIView.as_view())
 ]

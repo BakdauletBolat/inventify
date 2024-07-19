@@ -24,7 +24,8 @@ THIRD_PARTY_APPS = [
     'rest_framework',
     'rest_framework_simplejwt',
     'gunicorn',
-    'drf_yasg'
+    'drf_yasg',
+    'django_celery_results'
 ]
 
 LOCAL_APPS = [
@@ -113,7 +114,7 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = 'ru'
 
-TIME_ZONE = 'Asia/Almaty'
+TIME_ZONE = 'Asia/Oral'
 
 USE_I18N = True
 
@@ -157,3 +158,14 @@ AUTH_USER_MODEL = "users.User"
 CORS_ALLOW_ALL_ORIGINS = True
 CORS_ORIGIN_ALLOW_ALL = True
 CSRF_TRUSTED_ORIGINS = ["http://127.0.0.1:8000", "http://213.171.4.132:8000"]
+
+
+CELERY_TIMEZONE = "Asia/Oral"
+CELERY_TASK_TRACK_STARTED = True
+CELERY_TASK_TIME_LIMIT = 30 * 60
+CELERY_RESULT_BACKEND = 'django-db'
+CELERY_CACHE_BACKEND = 'django-cache'
+CELERY_BROKER_URL = "redis://localhost:6379"
+# CELERY_IMPORTS = (
+#     'apps.product.celery.import_product_task',
+# )

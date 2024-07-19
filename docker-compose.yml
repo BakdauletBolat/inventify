@@ -51,21 +51,21 @@ services:
 #    ports:
 #      - "7432:5432"
 #
-#  redis:
-#    image: redis:alpine
-#    ports:
-#      - '6379:6379'
-#    depends_on:
-#      - web
+  redis:
+    image: redis:alpine
+    ports:
+      - '6379:6379'
+    depends_on:
+      - web
 #
-#  celery-worker:
-#    image: 'main-web-app'
-#    command: poetry run celery -A inventify worker --beat --scheduler django --loglevel=info
-#    env_file:
-#      - .env
-#    depends_on:
-#      - redis
-#      - web
+  celery-worker:
+    image: 'main-web-app'
+    command: poetry run celery -A inventify worker --beat --scheduler django --loglevel=info
+    env_file:
+      - .env
+    depends_on:
+      - redis
+      - web
 #  es:
 #    image: elasticsearch:7.8.1
 #    environment:

@@ -30,6 +30,6 @@ class StockReceiptSerializer(serializers.ModelSerializer):
     quality_id = serializers.IntegerField(write_only=True)
 
     class Meta:
-        model = models.StockReceipt
+        model = models.StockMovement
         fields = ('id', 'product', 'warehouse', 'quality', 'quantity',
                   'product_id', 'warehouse_id', 'quality_id')
