@@ -1,6 +1,8 @@
 from django.contrib import admin
 from django.contrib.admin.widgets import AdminFileWidget
+from django.db.models import JSONField
 from django.utils.html import format_html
+from django_json_widget.widgets import JSONEditorWidget
 
 from apps.product.models import ImportProductData
 from apps.product.models.Price import Price
@@ -51,8 +53,14 @@ class ProductAdmin(admin.ModelAdmin):
         return product.price.last()
 
 
+class ImportProductAdmin(admin.ModelAdmin):
+    formfield_overrides = {
+        JSONField: {'widget': JSONEditorWidget},
+    }
+
+
 admin.site.register(Price)
 admin.site.register(Product, ProductAdmin)
-admin.site.register(ImportProductData)
+admin.site.register(ImportProductData, ImportProductAdmin)
 admin.site.register(ProductImage)
 admin.site.register(ProductDetail)

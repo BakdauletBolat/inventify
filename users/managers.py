@@ -1,4 +1,5 @@
 from django.contrib.auth.models import BaseUserManager
+from django.utils import timezone
 
 
 class UserManager(BaseUserManager):
@@ -9,6 +10,7 @@ class UserManager(BaseUserManager):
 
     def create_user(self, phone, password=None, **extra_fields):
         phone = self.normalize_phone(phone)
+        extra_fields.setdefault('date_joined', timezone.now())
         user = self.model(phone=phone, **extra_fields)
         user.set_password(password)
         user.save(using=self._db)

@@ -130,11 +130,7 @@ def run_seed(self, mode):
     clear_data()
     if mode == MODE_CLEAR:
         return
-    try:
-        User.objects.create_superuser(phone="+77089531792", password=123)
-    except Exception:
-        pass
+    User.objects.create_superuser(phone="+77089531792", password="123")
+
     # Creating 15 addresses
     create_modification()
-    for i in range(15):
-        create_product(i)
