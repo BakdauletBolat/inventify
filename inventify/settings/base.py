@@ -25,7 +25,8 @@ THIRD_PARTY_APPS = [
     'rest_framework_simplejwt',
     'gunicorn',
     'drf_yasg',
-    'django_celery_results'
+    'django_celery_results',
+    'django_json_widget'
 ]
 
 LOCAL_APPS = [
