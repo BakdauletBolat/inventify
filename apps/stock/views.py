@@ -10,5 +10,5 @@ class WareHouseViewSet(viewsets.ModelViewSet):
 
 
 class StockReceiptViewSet(viewsets.ModelViewSet):
-    queryset = models.StockReceipt.objects.all()
+    queryset = models.StockMovement.objects.all()
     serializer_class = serializers.StockReceiptSerializer

@@ -78,14 +78,7 @@ def create_modification():
                 MileageType(name="ml")]
 
     recar_request = RecarRequest()
-    categories_data = recar_request.get_categories()
     modification_params = recar_request.get_modification_params()
-
-    for category in categories_data:
-        categories.append(Category(
-            id=category['partCategory']['id'],
-            name=category['partCategory']['name']
-        ))
 
     for manufacturer in modification_params['manufacturers']['nodes']:
         manufacturers.append(ManufacturerType(id=manufacturer['id'],
@@ -115,11 +108,7 @@ def create_modification():
         steering_types.append(SteeringType(id=steeringType['id'],
                                            name=steeringType['name']))
 
-    Category.objects.bulk_create(categories,
-                                 update_conflicts=True,
-                                 unique_fields=['id'],
-                                 update_fields=['name', 'parent_id']
-                                 )
+
     AxleConfiguration.objects.bulk_create(axles)
     BodyType.objects.bulk_create(bodies, **bulk_create_options)
     DriveType.objects.bulk_create(drive_types, **bulk_create_options)

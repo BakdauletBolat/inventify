@@ -141,7 +141,7 @@ fragment Plan on Plan {
             'Authorization': 'Bearer ' + self.get_token(),
             'Accept': 'application/json',
             'Cookie': 'app-locale=ru;'
-        })
+        }, timeout=120)
 
         return response.json()
 
@@ -159,6 +159,18 @@ class RecarRequest(Request):
 
         response = self.post(body=data)
         return response['data']['categorySets']['nodes']
+
+    def get_category(self, category_id):
+        data = {
+            "operationName": "FetchCategorySet",
+            "variables": {
+                "id": category_id
+            },
+            "query": "query FetchCategorySet($id: ID) {\n  categorySet(id: $id) {\n    ...CategorySet\n    __typename\n  }\n}\n\nfragment CategorySet on CategorySet {\n  id\n  partCategory {\n    ...PartCategory\n    __typename\n  }\n  nearestParentId\n  children {\n    id\n    nearestParentId\n    partCategory {\n      ...PartCategory\n      __typename\n    }\n    __typename\n  }\n  __typename\n}\n\nfragment PartCategory on PartCategory {\n  id\n  name\n  isPart\n  ebayUkId\n  ebayUsId\n  ebayDeId\n  __typename\n}\n"
+        }
+
+        resposne = self.post(body=data)
+        return resposne['data']['categorySet']
 
     def get_modification_params(self):
         data = {
@@ -227,19 +239,13 @@ class RecarRequest(Request):
             "operationName": "FetchParts",
             "variables": {
                 "payload": {
-                    "statuses": [
-                        "in_stock",
-                        "reserved",
-                        "not_parsed",
-                        "out_of_stock"
-                    ],
-
-                    "defaultQuery": True,
+                    "statuses": ["in_stock", "reserved", "not_parsed"],
+                    "defaultQuery": False,
                     "departmentIds": "9182",
                     "partnership": False
                 },
                 "page": "1",
-                "size": "57000"
+                "size": "70000"
             },
             "query": "query FetchParts($payload: GetPartsInput, $size: Int, $page: Int) {\n  parts(payload: $payload, size: $size, page: $page) {\n    nodes {\n      id\n                                         __typename\n    }\n    __typename\n  }\n}\n"
         }
@@ -269,18 +275,18 @@ class RecarRequest(Request):
         response = self.post(data)
         return response['data']['part']['vehicleSpecifications']['modification']
 
-    def get_warehouses(self):
+    def get_warehouses(self, page, size):
         data = {
             "operationName": "fetchLocations",
             "variables": {
                 "payload": {
                     "departmentIds": "9182"
                 },
-                "page": "1",
-                "size": "3900",
+                "page": page,
+                "size": size,
                 "sort": {
                     "column": "parts_count",
-                    "order": "asc"
+                    "order": "desc"
                 },
                 "showId": False,
                 "showName": True,

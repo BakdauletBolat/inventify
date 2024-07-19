@@ -1,6 +1,8 @@
 *.pyc
 
 # Packages
+.idea/
+./.idea
 *.egg
 !/tests/**/*.egg
 /*.egg-info

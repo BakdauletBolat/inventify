@@ -14,6 +14,11 @@ class Command(BaseCommand):
 
 
 def create_products():
-    warehouses = RecarRequest().get_warehouses()
-    for warehouse in warehouses:
-        ImportWarehouseAction().run(warehouse)
+    page = 1
+    size = 50
+    # warehouses = RecarRequest().get_warehouses()
+
+    for pageNumber in range(page, 85, 1):
+        warehouses = RecarRequest().get_warehouses(pageNumber, size)
+        for warehouse in warehouses:
+            ImportWarehouseAction().run(warehouse)
