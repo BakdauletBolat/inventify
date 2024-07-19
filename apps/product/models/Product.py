@@ -13,7 +13,6 @@ class Product(BaseModel):
     code = models.ManyToManyField(OemCodes, null=True, blank=True)
     market_price = models.IntegerField(default=0, verbose_name='Рыночная цена', null=True, blank=True)
 
-    warehouse = models.ForeignKey('stock.Warehouse', blank=True, null=True, on_delete=models.SET_NULL)
     modification = models.ForeignKey(Modification, blank=True, null=True, on_delete=models.SET_NULL)
     category = models.ForeignKey(Category, blank=True, null=True, on_delete=models.CASCADE)
     color = models.ForeignKey(ColorType, null=True, blank=True, on_delete=models.CASCADE)

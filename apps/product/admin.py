@@ -2,6 +2,7 @@ from django.contrib import admin
 from django.contrib.admin.widgets import AdminFileWidget
 from django.utils.html import format_html
 
+from apps.product.models import ImportProductData
 from apps.product.models.Price import Price
 from apps.product.models.Product import *
 
@@ -42,7 +43,7 @@ class PriceTabularInline(admin.TabularInline):
 
 
 class ProductAdmin(admin.ModelAdmin):
-    list_display = ('id', 'name', 'get_last_price')
+    list_display = ('id', 'name', 'get_last_price', 'status')
     raw_id_fields = ('modification',)
     inlines = [ProductImageTabularInline, ProductDetailTabularInline, PriceTabularInline]
 
@@ -52,5 +53,6 @@ class ProductAdmin(admin.ModelAdmin):
 
 admin.site.register(Price)
 admin.site.register(Product, ProductAdmin)
+admin.site.register(ImportProductData)
 admin.site.register(ProductImage)
 admin.site.register(ProductDetail)

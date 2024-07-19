@@ -14,3 +14,4 @@ class StatusChoicesRecar(models.IntegerChoices):
     in_stock = 2
     reserved = 3
     out_of_stock = 4
+    sold = 5

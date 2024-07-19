@@ -9,6 +9,7 @@ from apps.product.models import Product
 from apps.product.models.Price import Price
 from apps.product.models.Product import ProductDetail, ProductImage
 from apps.product.repository import ProductRepository
+from apps.stock.models import Stock
 from base.requests import RecarRequest
 
 
@@ -44,16 +45,22 @@ class ImportProductAction:
             product = Product.objects.create(
                 id=product_data['id'],
                 name=product_data['category']['name'],
-                market_price=product_data['suggestedPrice'],
+                market_price=None if product_data.get('suggestedPrice') is None else product_data.get('suggestedPrice').get('currentPrice'),
                 category_id=product_data['category']['id'],
                 # color=
                 defect=product_data['defectComment'],
                 comment=product_data['comment'],
-                # status=StatusChoicesRecar
+                status=StatusChoicesRecar.__getitem__(name=product_data['status']),
                 # mileage=
                 # mileageType=
                 modification_id=self.get_modification_id(modificaiton),
-                warehouse_id=product_data['location']['id']
+            )
+
+            Stock.objects.create(
+                product=product,
+                warehouse_id=None if product_data.get('location') is None else product_data.get('location')['id'],
+                quality_id=1,
+                quantity=1
             )
 
             ProductDetail.objects.create(
