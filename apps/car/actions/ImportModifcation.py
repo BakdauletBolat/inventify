@@ -6,10 +6,10 @@ from base.requests import RecarRequest
 class ImportModification:
 
     def __init__(self):
-        self.body_types = dict(BodyTypeEnum.VALUES.value)
-        self.drive_types = dict(DriveTypeEnum.VALUES.value)
-        self.fuel_types = dict(FuelTypeEnum.VALUES.value)
-        self.gear_types = dict(GearTypeEnum.VALUES.value)
+        self.body_types = dict(BodyTypeEnum.get_values().value)
+        self.drive_types = dict(DriveTypeEnum.get_values().value)
+        self.fuel_types = dict(FuelTypeEnum.get_values().value)
+        self.gear_types = dict(GearTypeEnum.get_values().value)
 
     def run(self, car_model_id: int) -> None:
         recar_request = RecarRequest()
