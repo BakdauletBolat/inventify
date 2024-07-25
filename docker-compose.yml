@@ -75,7 +75,7 @@ services:
 
   celery-worker:
     build: ./
-    command: poetry run celery -A inventify worker --beat --scheduler django --loglevel=info
+    command: poetry run celery -A inventify worker -l info --concurrency=4
     depends_on:
       - redis
       - db
