@@ -39,22 +39,11 @@ class Stock(base_models.BaseModel):
     quantity = models.PositiveIntegerField(default=0)
 
     class Meta:
-        unique_together = ('product', 'quality', 'warehouse')
         verbose_name = 'Остаток'
         verbose_name_plural = 'Остатки'
 
     def __str__(self):
         return f"Продукт: {self.product} кол. ({self.quantity})"
-
-
-class StockHistory(base_models.BaseModel):
-    stock = models.ForeignKey(Stock, on_delete=models.CASCADE)
-    quantity_before = models.PositiveIntegerField(null=True, blank=True)
-    quantity_after = models.PositiveIntegerField()
-
-    class Meta:
-        verbose_name = 'История остатка'
-        verbose_name_plural = 'История остатков'
 
 
 class StockMovement(base_models.BaseModel):
