@@ -162,8 +162,8 @@ AUTH_USER_MODEL = "users.User"
 
 CORS_ALLOW_ALL_ORIGINS = True
 CORS_ORIGIN_ALLOW_ALL = True
-CSRF_TRUSTED_ORIGINS = ["http://127.0.0.1:8000", "http://213.171.4.132:8000"]
-
+CSRF_TRUSTED_ORIGINS = ["http://127.0.0.1:8000", "http://213.171.4.132:8000", "https://back-kaynar.kz",
+                        "https://kaynaravto.kz/"]
 
 CELERY_TIMEZONE = "Asia/Oral"
 CELERY_TASK_TRACK_STARTED = True
