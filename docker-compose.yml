@@ -73,7 +73,8 @@ services:
       - .env
     volumes:
       - media_volume:/usr/src/app/media
-      -
+
+
   certbot:
     image: certbot/certbot
     volumes:
