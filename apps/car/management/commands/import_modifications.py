@@ -1,7 +1,7 @@
 from django.core.management import BaseCommand
 
-from apps.car.actions.ImportModifcation import ImportModification
 from apps.car.models.Model import ModelCar
+from apps.car.tasks import import_modification
 
 
 class Command(BaseCommand):
@@ -16,4 +16,4 @@ class Command(BaseCommand):
 def create_modifications():
     car_models = ModelCar.objects.values_list('id', flat=True)
     for car_model_id in car_models:
-        ImportModification().run(car_model_id)
+        import_modification.delay(car_model_id)
