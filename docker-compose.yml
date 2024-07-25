@@ -49,7 +49,7 @@ services:
     volumes:
       - ./docker/certbot/conf:/etc/letsencrypt:rw
       - ./docker/certbot/www:/var/www/certbot:rw
-    command: certonly --webroot --webroot-path=/var/www/certbot/ --email djars500@gmail.com --agree-tos --no-eff-email -d back-kaynar.kz -d www.back-kaynar.kz
+#    command: certonly --webroot --webroot-path=/var/www/certbot/ --email djars500@gmail.com --agree-tos --no-eff-email -d back-kaynar.kz -d www.back-kaynar.kz
     depends_on:
       - nginx
 
