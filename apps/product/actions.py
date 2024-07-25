@@ -1,4 +1,7 @@
+from io import BytesIO
+
 import requests
+from PIL import Image
 from django.core.files.base import ContentFile
 from django.db import transaction, utils
 
@@ -37,11 +40,10 @@ class UpdateProductAction:
 
 class ImportProductAction:
     @transaction.atomic()
-    def run(self, product_id: int):
+    def run(self, product_data: dict):
         try:
             request = RecarRequest()
-            product_data = request.get_product(product_id)
-            modificaiton = request.get_product_modification(product_id)
+            modificaiton = request.get_product_modification(product_data['id'])
             product = Product.objects.create(
                 id=product_data['id'],
                 name=product_data['category']['name'],
@@ -53,7 +55,7 @@ class ImportProductAction:
                 status=StatusChoicesRecar.__getitem__(name=product_data['status']),
                 # mileage=
                 # mileageType=
-                modification_id=self.get_modification_id(modificaiton),
+                modification_id=modificaiton['id'],
             )
 
             Stock.objects.create(
@@ -79,8 +81,12 @@ class ImportProductAction:
             for product_image in product_data['inputParent']['picturesV2']:
                 image_url = product_image['optimized']
                 response = requests.get(image_url)
+                image = Image.open(BytesIO(response.content))
+                output_io = BytesIO()
+                image.save(output_io, format='JPEG', quality=70)
+                output_io.seek(0)
                 product_image = ProductImage(product=product)
-                product_image.image.save(image_url.split("/")[-1], ContentFile(response.content))
+                product_image.image.save(image_url.split("/")[-1], ContentFile(output_io.read()))
 
         except utils.IntegrityError as exc:
             print(exc)

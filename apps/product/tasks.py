@@ -6,9 +6,9 @@ from base.requests import RecarRequest
 
 
 @shared_task
-def import_product_task(product_id: int):
+def import_product_task(data: dict):
     action = ImportProductAction()
-    action.run(product_id)
+    action.run(data)
 
 
 @shared_task

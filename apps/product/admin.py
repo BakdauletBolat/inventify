@@ -54,6 +54,7 @@ class ProductAdmin(admin.ModelAdmin):
 
 
 class ImportProductAdmin(admin.ModelAdmin):
+    search_fields = ('product_id', )
     formfield_overrides = {
         JSONField: {'widget': JSONEditorWidget},
     }
