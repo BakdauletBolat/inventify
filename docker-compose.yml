@@ -1,4 +1,4 @@
-version: '3'
+version: '3.8'
 
 services:
   web:
@@ -13,8 +13,8 @@ services:
       - .env
     depends_on:
       - db
-#      - db-drf-api-logger
-#      - es
+  #      - db-drf-api-logger
+  #      - es
 
   db:
     image: postgres:13.0-alpine
@@ -35,27 +35,38 @@ services:
     volumes:
       - static_volume:/usr/src/app/staticfiles
       - media_volume:/usr/src/app/media
-      - ./data/certbot/conf:/etc/letsencrypt
-      - ./data/certbot/www:/var/www/certbot
+      - ./docker/nginx/prod/:/etc/nginx/conf.d:ro
+      - ./docker/certbot/conf:/etc/letsencrypt:ro
+      - ./docker/certbot/www:/var/www/certbot:ro
     ports:
       - '80:80'
       - '443:443'
     depends_on:
       - web
 
-#  db-drf-api-logger:
-#    image: postgres:13.0-alpine
-#    volumes:
-#      - postgres_data_drf:/var/lib/postgresql/data/
-#    env_file:
-#      - .env
-#    environment:
-#      POSTGRES_USER: ${SQL_USER_DRF}
-#      POSTGRES_PASSWORD: ${SQL_PASSWORD_DRF}
-#      POSTGRES_DB: ${SQL_DATABASE_DRF}
-#    ports:
-#      - "7432:5432"
-#
+  certbot:
+    image: certbot/certbot
+    container_name: certbot
+    volumes:
+      - ./docker/certbot/conf:/etc/letsencrypt:rw
+      - ./docker/certbot/www:/var/www/certbot:rw
+    command: certonly --webroot --webroot-path=/var/www/certbot/ --email djars500@gmail.com --agree-tos --no-eff-email -d back-kaynar.kz -d www.back-kaynar.kz
+    depends_on:
+      - nginx
+
+  #  db-drf-api-logger:
+  #    image: postgres:13.0-alpine
+  #    volumes:
+  #      - postgres_data_drf:/var/lib/postgresql/data/
+  #    env_file:
+  #      - .env
+  #    environment:
+  #      POSTGRES_USER: ${SQL_USER_DRF}
+  #      POSTGRES_PASSWORD: ${SQL_PASSWORD_DRF}
+  #      POSTGRES_DB: ${SQL_DATABASE_DRF}
+  #    ports:
+  #      - "7432:5432"
+  #
   redis:
     image: redis:alpine
     ports:
@@ -74,13 +85,6 @@ services:
     volumes:
       - media_volume:/usr/src/app/media
 
-
-  certbot:
-    image: certbot/certbot
-    volumes:
-      - ./data/certbot/conf:/etc/letsencrypt
-      - ./data/certbot/www:/var/www/certbot
-    command: "/bin/sh -c 'while :; do sleep 6h & wait $${!}; nginx -s reload; done & nginx -g \"daemon off;\"'"
 #  es:
 #    image: elasticsearch:7.8.1
 #    environment:
@@ -90,7 +94,7 @@ services:
 
 volumes:
   postgres_data:
-#  postgres_data_drf:
+  #  postgres_data_drf:
   static_volume:
   media_volume:
 
