@@ -35,8 +35,11 @@ services:
     volumes:
       - static_volume:/usr/src/app/staticfiles
       - media_volume:/usr/src/app/media
+      - ./data/certbot/conf:/etc/letsencrypt
+      - ./data/certbot/www:/var/www/certbot
     ports:
       - '80:80'
+      - '443:443'
     depends_on:
       - web
 
@@ -70,6 +73,12 @@ services:
       - .env
     volumes:
       - media_volume:/usr/src/app/media
+      -
+  certbot:
+    image: certbot/certbot
+    volumes:
+      - ./data/certbot/conf:/etc/letsencrypt
+      - ./data/certbot/www:/var/www/certbot
 #  es:
 #    image: elasticsearch:7.8.1
 #    environment:
