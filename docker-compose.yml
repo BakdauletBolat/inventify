@@ -27,7 +27,7 @@ services:
       POSTGRES_PASSWORD: ${SQL_PASSWORD}
       POSTGRES_DB: ${SQL_DATABASE}
     ports:
-      - "5432:5432"
+      - "${SQL_PORT:-5432}:5432"
 
   nginx:
     build: ./docker/prod/nginx/
@@ -69,17 +69,15 @@ services:
   redis:
     image: redis:alpine
     ports:
-      - '6379:6379'
+      - '6381:6379'
     depends_on:
       - web
-    sysctls:
-      - vm.overcommit_memory=1
     volumes:
-      - ./docker/prod/redis/redis.conf:/usr/local/etc/redis/redis.conf
+      - redis_data:/data
 
   celery-worker:
     build: ./
-    command: poetry run celery -A inventify worker -l info --concurrency=2
+    command: poetry run celery -A inventify worker -l info --concurrency=1
     depends_on:
       - redis
       - db
@@ -87,8 +85,6 @@ services:
       - .env
     volumes:
       - media_volume:/usr/src/app/media
-    networks:
-      - my_network
 
 
   flower:
@@ -98,8 +94,6 @@ services:
       - "5557:5555"
     depends_on:
       - redis
-    networks:
-      - my_network
 
 
 #  es:
@@ -114,6 +108,7 @@ volumes:
   #  postgres_data_drf:
   static_volume:
   media_volume:
+  redis_data:
 
 #networks:
 #  default:

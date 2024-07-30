@@ -1,0 +1,11 @@
+version: '3'
+
+services:
+  nginx:
+    build: ./docker/dev/nginx/
+    restart: always
+    volumes:
+      - static_volume:/usr/src/app/staticfiles
+      - media_volume:/usr/src/app/media
+    ports:
+      - '8000:80'
