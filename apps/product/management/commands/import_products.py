@@ -1,3 +1,4 @@
+from celery import group
 from django.core.management import BaseCommand
 
 from apps.product.enums import StatusChoices
@@ -20,5 +21,17 @@ def create_products():
     products = Product.objects.filter(id__in=product_ids_recar).values_list('id', flat=True)
     difference_products_ids = set(product_ids_recar).difference(products)
     remains_recar_products = ImportProductData.objects.filter(product_id__in=difference_products_ids)
+    batch_size = 1000  # Размер партии
+    tasks = []
+
     for product_data in remains_recar_products:
-        import_product_task.delay(product_data.id)
+        tasks.append(import_product_task.s(product_data.id))
+        if len(tasks) >= batch_size:
+            job = group(tasks)
+            job.apply_async()
+            tasks = []  # Очистите список задач после отправки партии
+
+    # Отправьте оставшиеся задачи, если они есть
+    if tasks:
+        job = group(tasks)
+        job.apply_async()

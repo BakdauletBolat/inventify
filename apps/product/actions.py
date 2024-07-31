@@ -39,6 +39,32 @@ class UpdateProductAction:
 
 
 class ImportProductAction:
+
+    @staticmethod
+    def save_image(product_data, product):
+        for product_image in product_data['inputParent']['picturesV2']:
+            image_url = product_image['optimized']
+            response = requests.get(image_url)
+            image = Image.open(BytesIO(response.content))
+
+            output_io = BytesIO()
+            quality = 70  # Начальная качество
+            max_size = 1 * 1024 * 1024  # 1 МБ
+
+            while True:
+                output_io.seek(0)
+                image.save(output_io, format='JPEG', quality=quality)
+                output_io.seek(0)
+                if len(output_io.getvalue()) <= max_size or quality < 10:
+                    break
+                quality -= 5  # Уменьшение качества на 5%
+
+            product_image_instance = ProductImage(product=product)
+            product_image_instance.image.save(image_url.split("/")[-1], ContentFile(output_io.getvalue()))
+
+            # Очистка буфера
+            output_io.close()
+
     @transaction.atomic()
     def run(self, product_data: dict):
         try:
@@ -47,7 +73,8 @@ class ImportProductAction:
             product = Product.objects.create(
                 id=product_data['id'],
                 name=product_data['category']['name'],
-                market_price=None if product_data.get('suggestedPrice') is None else product_data.get('suggestedPrice').get('currentPrice'),
+                market_price=None if product_data.get('suggestedPrice') is None else product_data.get(
+                    'suggestedPrice').get('currentPrice'),
                 category_id=product_data['category']['id'],
                 # color=
                 defect=product_data['defectComment'],
@@ -78,15 +105,7 @@ class ImportProductAction:
                 cost=0 if product_data.get('price') is None else product_data.get('price'),
             )
 
-            for product_image in product_data['inputParent']['picturesV2']:
-                image_url = product_image['optimized']
-                response = requests.get(image_url)
-                image = Image.open(BytesIO(response.content))
-                output_io = BytesIO()
-                image.save(output_io, format='JPEG', quality=70)
-                output_io.seek(0)
-                product_image = ProductImage(product=product)
-                product_image.image.save(image_url.split("/")[-1], ContentFile(output_io.read()))
+            self.save_image(product_data, product)
 
         except utils.IntegrityError as exc:
             print(exc)
