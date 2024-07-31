@@ -6,9 +6,10 @@ from base.requests import RecarRequest
 
 
 @shared_task
-def import_product_task(data: dict):
+def import_product_task(id: int):
     action = ImportProductAction()
-    action.run(data)
+    draft = ImportProductData.objects.get(id=id)
+    action.run(draft.data)
 
 
 @shared_task

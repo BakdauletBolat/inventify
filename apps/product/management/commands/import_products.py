@@ -21,4 +21,4 @@ def create_products():
     difference_products_ids = set(product_ids_recar).difference(products)
     remains_recar_products = ImportProductData.objects.filter(product_id__in=difference_products_ids)
     for product_data in remains_recar_products:
-        import_product_task.delay(product_data.data)
+        import_product_task.delay(product_data.id)
