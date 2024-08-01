@@ -62,6 +62,12 @@ class ProductImage(models.Model):
         verbose_name = 'Фото продукта'
         verbose_name_plural = 'Фото продуктов'
 
+    def delete(self, *args, **kwargs):
+        # Удаление файла перед удалением объекта
+        if self.image and hasattr(self.image, 'path'):
+            self.image.delete()
+        super(ProductImage, self).delete(*args, **kwargs)
+
 #
 # @receiver(post_save, sender=Product)
 # def changed_product(sender, instance, **kwargs):

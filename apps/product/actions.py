@@ -2,6 +2,7 @@ from io import BytesIO
 
 import requests
 from PIL import Image
+from django.core.cache import cache
 from django.core.files.base import ContentFile
 from django.db import transaction, utils
 
@@ -113,9 +114,24 @@ class ImportProductAction:
     @staticmethod
     def get_modification_id(modification_data: dict) -> Modification:
 
-        try:
-            modification = Modification.objects.get(id=modification_data['id'])
-        except Modification.DoesNotExist:
-            ImportModification().run(modification_data['modelId'])
+        modification_id = modification_data['id']
 
-        return modification_data['id']
+        # Попробуем сначала получить объект из кэша
+        cache_key = f"modification_{modification_id}"
+        modification = cache.get(cache_key)
+
+        if modification is None:
+            try:
+                # Если объект не найден в кэше, получаем его из базы данных
+                modification = Modification.objects.get(id=modification_id).id
+                # Сохраняем объект в кэше
+                cache.set(cache_key, modification, timeout=3600)  # timeout - время хранения в кэше, в секундах
+            except Modification.DoesNotExist:
+                # Если объекта нет в базе данных, выполняем импорт
+                ImportModification().run(modification_data['modelId'])
+                # Попробуем снова получить объект из базы данных
+                modification = Modification.objects.get(id=modification_id).id
+                # Сохраняем объект в кэше
+                cache.set(cache_key, modification.id, timeout=3600)  # timeout - время хранения в кэше, в секундах
+
+        return modification

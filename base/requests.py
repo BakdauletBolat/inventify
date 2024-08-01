@@ -1,131 +1,47 @@
 import requests
+from django.core.cache import cache
 
 
 class Request:
     data = {
-        "operationName": "ObtainTokens",
+        "operationName": "fetchModifications",
         "variables": {
             "payload": {
-                "email": "abdipatahovas@gmail.com",
-                "password": "S123456sev$"
-            }
+                "modelId": "28",
+                "departmentId": "9182",
+                "enabled": True
+            },
+            "size": 1000
         },
-        "query": """mutation ObtainTokens($payload: ObtainTokensInput!) {
-  obtainTokens(payload: $payload) {
-    tokens {
-      ...Tokens
-      __typename
-    }
-    user {
-      id
-      admin
-      email
-      firstname
-      lastname
-      picture {
-        id
-        url
-        __typename
-      }
-      phoneNumber
-      selectedDepartmentId
-      selectedCompanyId
-      selectedVehicleType
-      verified
-      selectedDepartment {
-        id
-        tasksFlowEnabled
-        shipmentsEnabled
-        partsQuantityEnabled
-        rrrEnabled
-        companyId
-        name
-        vehicleType
-        plan {
-          ...Plan
-          __typename
-        }
-        __typename
-      }
-      departments {
-        id
-        tasksFlowEnabled
-        companyId
-        name
-        vehicleType
-        partsQuantityEnabled
-        rrrEnabled
-        shipmentsEnabled
-        __typename
-      }
-      companies {
-        id
-        name
-        __typename
-      }
-      roles {
-        ...Role
-        __typename
-      }
-      __typename
-    }
-    __typename
-  }
-}
-
-fragment Role on Role {
-  id
-  name
-  departmentId
-  companyId
-  partnership
-  visible
-  distributorPermissions {
-    ...Permission
-    __typename
-  }
-  departmentPermissions {
-    ...Permission
-    __typename
-  }
-  companyPermissions {
-    ...Permission
-    __typename
-  }
-  __typename
-}
-
-fragment Permission on Permission {
-  id
-  name
-  __typename
-}
-
-fragment Tokens on Tokens {
-  accessToken
-  refreshToken
-  idToken
-  __typename
-}
-
-fragment Plan on Plan {
-  id
-  name
-  price
-  default
-  __typename
-}
-"""
+        "query": "query fetchModifications($payload: GetModificationsInput, $page: Int, $size: Int) {\n  modifications(payload: $payload, page: $page, size: $size) {\n    nodes {\n      ...Modification\n      __typename\n    }\n    __typename\n  }\n}\n\nfragment Modification on Modification {\n  id\n  name: title\n  fullTitle\n  type\n  modelId\n  startDate\n  endDate\n  bodyType\n  driveType\n  fuelType\n  gearType\n  power\n  numOfCyl\n  numOfValves\n  capacity\n  platformType\n  axleConfiguration\n  suspensionTypes {\n    id\n    name\n    __typename\n  }\n  __typename\n}\n"
     }
 
     url = "https://prod.internal.recar.lt/graphql"
+    cache_key = 'access_token'
+    cache_timeout = 3500
+
+    def get_token_from_cache(self):
+        return cache.get(self.cache_key)
+
+    def save_token_to_cache(self, token):
+        cache.set(self.cache_key, token, timeout=self.cache_timeout)
 
     def get_token(self):
+        token = self.get_token_from_cache()
+        if token:
+            return token
+
         response = requests.post(
             url=self.url,
             json=self.data,
         )
-        return response.json()['data']['obtainTokens']['tokens']['accessToken']
+        token = response.json()['data']['obtainTokens']['tokens']['accessToken']
+
+        if token:
+            self.save_token_to_cache(token)
+            return token
+        else:
+            raise ValueError("Failed to obtain access token")
 
     def get(self, url, params=None):
         response = requests.get(f'{self.url}{url}',

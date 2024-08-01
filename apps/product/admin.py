@@ -33,7 +33,6 @@ class ProductImageTabularInline(admin.StackedInline):
         models.ImageField: {'widget': AdminImageWidget}
     }
 
-
 class ProductDetailTabularInline(admin.TabularInline):
     model = ProductDetail
     extra = 0
@@ -47,6 +46,7 @@ class PriceTabularInline(admin.TabularInline):
 class ProductAdmin(admin.ModelAdmin):
     list_display = ('id', 'name', 'get_last_price', 'status')
     raw_id_fields = ('modification',)
+    list_filter = ('status', )
     inlines = [ProductImageTabularInline, ProductDetailTabularInline, PriceTabularInline]
 
     def get_last_price(self, product):

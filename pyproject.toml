@@ -25,6 +25,7 @@ django-celery-results = "^2.5.1"
 django-json-widget = "^2.0.1"
 flower = "^2.0.1"
 python-dotenv = "^1.0.1"
+django-redis = "^5.4.0"
 
 
 [build-system]
