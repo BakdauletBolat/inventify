@@ -59,6 +59,7 @@ class ImportProductAction:
             max_size = 100 * 1024  # 100 КБ
 
             while True:
+                output_io.truncate(0)
                 output_io.seek(0)
                 image.save(output_io, format='JPEG', quality=quality)
                 output_io.seek(0)
