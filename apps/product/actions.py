@@ -43,9 +43,12 @@ class ImportProductAction:
 
     @staticmethod
     def save_image(product_data, product):
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.36'
+        }
         for product_image in product_data['inputParent']['picturesV2']:
             image_url = product_image['optimized']
-            response = requests.get(image_url)
+            response = requests.get(image_url, headers=headers)
             image = Image.open(BytesIO(response.content))
 
             output_io = BytesIO()
