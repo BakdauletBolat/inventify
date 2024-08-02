@@ -51,6 +51,9 @@ class ImportProductAction:
             response = requests.get(image_url, headers=headers)
             image = Image.open(BytesIO(response.content))
 
+            if image.mode == 'RGBA':
+                image = image.convert('RGB')
+
             output_io = BytesIO()
             quality = 70  # Начальная качество
             max_size = 100 * 1024  # 100 КБ
