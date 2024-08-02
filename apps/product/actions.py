@@ -50,7 +50,7 @@ class ImportProductAction:
 
             output_io = BytesIO()
             quality = 70  # Начальная качество
-            max_size = 1 * 1024 * 1024  # 1 МБ
+            max_size = 100 * 1024  # 100 КБ
 
             while True:
                 output_io.seek(0)

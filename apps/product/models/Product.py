@@ -1,4 +1,7 @@
 from django.contrib.contenttypes.fields import GenericRelation
+from django.core.files.storage import default_storage
+from django.db.models.signals import post_save, post_delete, pre_delete
+from django.dispatch import receiver
 
 from apps.car.models.Modification import Modification
 from apps.car.models.ModificationDetails import *
@@ -6,6 +9,7 @@ from apps.category.models import Category
 from apps.product.enums import StatusChoices
 from base.models import BaseModel
 from history.models.History import History
+from history.services.create_history import create_history
 
 
 class Product(BaseModel):
@@ -64,15 +68,25 @@ class ProductImage(models.Model):
 
     def delete(self, *args, **kwargs):
         # Удаление файла перед удалением объекта
-        if self.image and hasattr(self.image, 'path'):
-            self.image.delete()
+        if self.image and default_storage.exists(self.image.name):
+            default_storage.delete(self.image.name)
         super(ProductImage, self).delete(*args, **kwargs)
 
+
 #
-# @receiver(post_save, sender=Product)
-# def changed_product(sender, instance, **kwargs):
-#     if kwargs.get('update_fields') is not None:
-#         create_history(sender=sender, instance=instance, type='single', **kwargs)
+@receiver(post_save, sender=Product)
+def changed_product(sender, instance, **kwargs):
+    if kwargs.get('update_fields') is None:
+        create_history(sender=sender, instance=instance, type='single', **kwargs)
+
+
+@receiver(pre_delete, sender=Product)
+def delete_related_images(sender, instance, **kwargs):
+    # Удаление связанных изображений
+    for image in instance.pictures.all():
+        if image.image and default_storage.exists(image.image.name):
+            default_storage.delete(image.image.name)
+        image.delete()
 #
 #
 # @receiver(m2m_changed, sender=Product.prices.through)
