@@ -15,7 +15,7 @@ from base.views import BaseAPIView
 
 
 class ProductViewSet(BaseAPIView):
-    queryset = Product.objects.select_related('modification', 'warehouse').all()
+    queryset = Product.objects.select_related('modification').all()
     deserializer_class = deserializers.ProductDeSerializer
     serializer_class = serializers.ProductSerializer
     pagination_class = CustomPageNumberPagination
