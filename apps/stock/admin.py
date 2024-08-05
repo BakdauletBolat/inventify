@@ -36,6 +36,8 @@ class StockAdmin(admin.ModelAdmin):
     # def has_change_permission(self, request, obj=None):
     #     return False
 
+    raw_id_fields = ('product', 'warehouse', )
+
 
 class StockMovementAdmin(admin.ModelAdmin):
     raw_id_fields = ('product', 'warehouse',)

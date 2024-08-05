@@ -33,7 +33,7 @@ class Warehouse(base_models.BaseModel):
 
 
 class Stock(base_models.BaseModel):
-    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='stocks')
+    product = models.OneToOneField(Product, on_delete=models.CASCADE, related_name='stock')
     warehouse = models.ForeignKey(Warehouse, on_delete=models.CASCADE, null=True, blank=True)
     quality = models.ForeignKey(Quality, on_delete=models.SET_NULL, null=True, blank=True)
     quantity = models.PositiveIntegerField(default=0)

@@ -25,13 +25,13 @@ class ProductImageSerializer(serializers.ModelSerializer):
 
 class ProductSerializer(serializers.ModelSerializer):
     price = serializers.SerializerMethodField()
-    warehouse = serializers.CharField(read_only=True)
     color = serializers.CharField(read_only=True)
     category = serializers.CharField(read_only=True)
     code = serializers.StringRelatedField(read_only=True,
-                                              many=True
-                                              )
+                                          many=True
+                                          )
     modification = ModificationSerializer()
+    warehouse = serializers.SerializerMethodField()
     detail = ProductDetailSerializer()
     status = serializers.CharField(source='get_status_display')
     pictures = serializers.SerializerMethodField()
@@ -40,8 +40,14 @@ class ProductSerializer(serializers.ModelSerializer):
     def get_price(obj):
         return getattr(obj.price.last(), 'cost', None)
 
-    def get_pictures(self, obj):
+    def get_pictures(self, obj: Product):
         return ProductImageSerializer(obj.pictures.all(), many=True, context=self.context).data
+
+    @staticmethod
+    def get_warehouse(obj: Product):
+        from apps.stock.serializers import WareHouseSerializer
+
+        return WareHouseSerializer(obj.stock.warehouse).data
 
     class Meta:
         model = Product
