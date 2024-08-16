@@ -34,7 +34,7 @@ class ProductEAVSerializer(serializers.Serializer):
                     value = ModelCarSerializer(getattr(instance.eav, attribute.slug, None)).data
                     # value.pop('_state')
             if attribute.datatype == Attribute.TYPE_ENUM:
-                value = getattr(value, 'value', None)
+                value = value if value is not None else getattr(value, 'value', None)
 
             attributes[attribute.name] = value
         return attributes
