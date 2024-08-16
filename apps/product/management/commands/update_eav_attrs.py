@@ -38,7 +38,10 @@ def create_products():
             product.eav.drivetype = modification_attr.data['driveType']
             product.eav.steeringtype = modification_attr.data['steeringType']
             product.eav.axleconfiguration = modification_attr.data['axleConfiguration']
-            product.eav.modelCar = ModelCar.objects.get(id=modification_attr.data['model']['id'])
+            try:
+                product.eav.modelCar = ModelCar.objects.get(id=modification_attr.data['model']['id'])
+            except Exception as e:
+                print(modification_attr.id)
             product.eav.power = modification.get('power', None)
             product.eav.capacity = modification.get('capacity', None)
             product.eav.numberofcycle = modification.get('numOfCyl', None)
