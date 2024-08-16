@@ -4,7 +4,7 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 
-load_dotenv('.env.dev')
+load_dotenv('.env.prod')
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
@@ -172,7 +172,7 @@ CELERY_TASK_TRACK_STARTED = True
 CELERY_TASK_TIME_LIMIT = 30 * 60
 CELERY_RESULT_BACKEND = 'django-db'
 CELERY_CACHE_BACKEND = 'django-cache'
-CELERY_BROKER_URL = os.environ.get('CELERY_BROKER_URL')
+CELERY_BROKER_URL = c 
 # CELERY_IMPORTS = (
 #     'apps.product.celery.import_product_task',
 # )
@@ -180,7 +180,7 @@ CELERY_BROKER_URL = os.environ.get('CELERY_BROKER_URL')
 CACHES = {
     'default': {
         'BACKEND': 'django_redis.cache.RedisCache',
-        'LOCATION': 'redis://127.0.0.1:6379/1',  # Убедитесь, что Redis запущен на этом хосте и порту
+        'LOCATION': os.environ.get('CELERY_CACHE_URL'),  # Убедитесь, что Redis запущен на этом хосте и порту
         'OPTIONS': {
             'CLIENT_CLASS': 'django_redis.client.DefaultClient',
         }
