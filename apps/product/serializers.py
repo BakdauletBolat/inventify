@@ -1,6 +1,7 @@
 from rest_framework import serializers
 
 from apps.car.serializers import ModificationSerializer
+from apps.product.eav_serializer import ProductEAVSerializer
 from apps.product.models.Product import *
 
 
@@ -46,10 +47,30 @@ class ProductSerializer(serializers.ModelSerializer):
     @staticmethod
     def get_warehouse(obj: Product):
         from apps.stock.serializers import WareHouseSerializer
-
-        return WareHouseSerializer(obj.stock.warehouse).data
+        if hasattr(obj, 'stock'):
+            return WareHouseSerializer(obj.stock.warehouse).data
+        return None
 
     class Meta:
         model = Product
         fields = '__all__'
         read_only_fields = ['pictures', 'warehouse']
+
+
+class ProductSerializerV2(ProductSerializer):
+    eav_attributes = ProductEAVSerializer(source='*')
+    modification = None
+
+    class Meta(ProductSerializer.Meta):
+        fields = '__all__'
+
+    def get_pictures(self, obj: Product):
+        return ProductImageSerializer(obj.pictures.all(), many=True, context=self.context).data
+
+
+class ProductListSerializerV2(ProductSerializer):
+    class Meta(ProductSerializer.Meta):
+        fields = ('id', 'category', 'pictures', 'status', 'warehouse', 'price',)
+
+    def get_pictures(self, obj: Product):
+        return ProductImageSerializer(obj.pictures.all(), many=True, context=self.context).data

@@ -1,9 +1,7 @@
 from django.core.management import BaseCommand
 
-from apps.product.enums import StatusChoices
-from apps.product.models import Product
 from apps.product.models.ImportProductData import ImportProductData
-from apps.product.tasks import import_product_task, import_product_draft
+from apps.product.tasks import import_product_draft
 from base.requests import RecarRequest
 
 

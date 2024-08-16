@@ -16,7 +16,8 @@ class UserSerializer(serializers.ModelSerializer):
             "profile_type": {"required": True},
             "password": {"write_only": True, 'required': False}
         }
-        exclude = ('groups', 'user_permissions')
+        fields = ('__all__')
+        # exclude = ('user_permissions', )
 
 
 class UserRegisterSerializer(UserSerializer):

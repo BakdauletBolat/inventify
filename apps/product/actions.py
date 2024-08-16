@@ -76,8 +76,6 @@ class ImportProductAction:
     @transaction.atomic()
     def run(self, product_data: dict):
         try:
-            request = RecarRequest()
-            modificaiton = request.get_product_modification(product_data['id'])
             product = Product.objects.create(
                 id=product_data['id'],
                 name=product_data['category']['name'],
@@ -88,9 +86,6 @@ class ImportProductAction:
                 defect=product_data['defectComment'],
                 comment=product_data['comment'],
                 status=StatusChoicesRecar.__getitem__(name=product_data['status']),
-                # mileage=
-                # mileageType=
-                modification_id=modificaiton['id'],
             )
 
             Stock.objects.create(
@@ -118,27 +113,27 @@ class ImportProductAction:
         except utils.IntegrityError as exc:
             print(exc)
 
-    @staticmethod
-    def get_modification_id(modification_data: dict) -> Modification:
-
-        modification_id = modification_data['id']
-
-        # Попробуем сначала получить объект из кэша
-        cache_key = f"modification_{modification_id}"
-        modification = cache.get(cache_key)
-
-        if modification is None:
-            try:
-                # Если объект не найден в кэше, получаем его из базы данных
-                modification = Modification.objects.get(id=modification_id).id
-                # Сохраняем объект в кэше
-                cache.set(cache_key, modification, timeout=3600)  # timeout - время хранения в кэше, в секундах
-            except Modification.DoesNotExist:
-                # Если объекта нет в базе данных, выполняем импорт
-                ImportModification().run(modification_data['modelId'])
-                # Попробуем снова получить объект из базы данных
-                modification = Modification.objects.get(id=modification_id).id
-                # Сохраняем объект в кэше
-                cache.set(cache_key, modification.id, timeout=3600)  # timeout - время хранения в кэше, в секундах
-
-        return modification
+    # @staticmethod
+    # def get_modification_id(modification_data: dict) -> Modification:
+    #
+    #     modification_id = modification_data['id']
+    #
+    #     # Попробуем сначала получить объект из кэша
+    #     cache_key = f"modification_{modification_id}"
+    #     modification = cache.get(cache_key)
+    #
+    #     if modification is None:
+    #         try:
+    #             # Если объект не найден в кэше, получаем его из базы данных
+    #             modification = Modification.objects.get(id=modification_id).id
+    #             # Сохраняем объект в кэше
+    #             cache.set(cache_key, modification, timeout=3600)  # timeout - время хранения в кэше, в секундах
+    #         except Modification.DoesNotExist:
+    #             # Если объекта нет в базе данных, выполняем импорт
+    #             ImportModification().run(modification_data['modelId'])
+    #             # Попробуем снова получить объект из базы данных
+    #             modification = Modification.objects.get(id=modification_id).id
+    #             # Сохраняем объект в кэше
+    #             cache.set(cache_key, modification.id, timeout=3600)  # timeout - время хранения в кэше, в секундах
+    #
+    #     return modification

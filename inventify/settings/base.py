@@ -4,11 +4,11 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 
-load_dotenv('.env')
+load_dotenv('.env.dev')
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
-SECRET_KEY = 'django-insecure-wu!87*y!!e400jzbdhe2_fmwpa_dr!r)u8@t@e2ylx(nq*p8*!'
+SECRET_KEY = os.environ.get('SECRET_KEY')
 
 DEBUG = os.environ.get('DEBUG', 1)
 
@@ -30,7 +30,8 @@ THIRD_PARTY_APPS = [
     'gunicorn',
     'drf_yasg',
     'django_celery_results',
-    'django_json_widget'
+    'django_json_widget',
+    'eav'
 ]
 
 LOCAL_APPS = [
@@ -147,6 +148,7 @@ REST_FRAMEWORK = {
         'rest_framework.filters.OrderingFilter',
         'rest_framework.filters.SearchFilter'
     ),
+    'EXCEPTION_HANDLER': 'base.exception_handler.custom_exception_handler'
 
 }
 
@@ -174,3 +176,15 @@ CELERY_BROKER_URL = os.environ.get('CELERY_BROKER_URL')
 # CELERY_IMPORTS = (
 #     'apps.product.celery.import_product_task',
 # )
+
+CACHES = {
+    'default': {
+        'BACKEND': 'django_redis.cache.RedisCache',
+        'LOCATION': 'redis://127.0.0.1:6379/1',  # Убедитесь, что Redis запущен на этом хосте и порту
+        'OPTIONS': {
+            'CLIENT_CLASS': 'django_redis.client.DefaultClient',
+        }
+    }
+}
+
+EAV2_PRIMARY_KEY_FIELD = "django.db.models.BigAutoField" # as example

@@ -2,6 +2,7 @@ from django.contrib.contenttypes.fields import GenericRelation
 from django.core.files.storage import default_storage
 from django.db.models.signals import post_save, post_delete, pre_delete
 from django.dispatch import receiver
+from eav.decorators import register_eav
 
 from apps.car.models.Modification import Modification
 from apps.car.models.ModificationDetails import *
@@ -12,6 +13,7 @@ from history.models.History import History
 from history.services.create_history import create_history
 
 
+@register_eav()
 class Product(BaseModel):
     name = models.CharField(max_length=255, verbose_name='Наименование')
     code = models.ManyToManyField(OemCodes, null=True, blank=True)

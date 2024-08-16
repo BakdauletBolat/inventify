@@ -187,7 +187,7 @@ class RecarRequest(Request):
             "query": "query FetchPartTpParameters($id: ID) {\n  part(id: $id) {\n    id\n    ...TpParameters\n    __typename\n  }\n}\n\nfragment TpParameters on Part {\n  vehicleSpecifications {\n    id\n    model {\n      ...Model\n      __typename\n    }\n    manufacturer {\n      ...Manufacturer\n      __typename\n    }\n    modification {\n      ...Modification\n      __typename\n    }\n    engine {\n      id\n      name: title\n      __typename\n    }\n    vinCode\n    color\n    bodyType\n    driveType\n    gearType\n    steeringType\n    fuelType\n    fuelSystem\n    coolingType\n    engineDisplacement\n    year\n    mileage\n    mileageType\n    platformType\n    axleConfiguration\n    frontSuspensionType\n    rearSuspensionType\n    __typename\n  }\n  __typename\n}\n\nfragment Model on Model {\n  id\n  name: title\n  startDate\n  endDate\n  __typename\n}\n\nfragment Manufacturer on Manufacturer {\n  name: title\n  id\n  __typename\n}\n\nfragment Modification on Modification {\n  id\n  name: title\n  fullTitle\n  type\n  modelId\n  startDate\n  endDate\n  bodyType\n  driveType\n  fuelType\n  gearType\n  power\n  numOfCyl\n  numOfValves\n  capacity\n  platformType\n  axleConfiguration\n  suspensionTypes {\n    id\n    name\n    __typename\n  }\n  __typename\n}\n"
         }
         response = self.post(data)
-        return response['data']['part']['vehicleSpecifications']['modification']
+        return response['data']['part']['vehicleSpecifications']
 
     def get_warehouses(self, page, size):
         data = {

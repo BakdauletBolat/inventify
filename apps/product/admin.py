@@ -1,12 +1,43 @@
+from django import forms
 from django.contrib import admin
 from django.contrib.admin.widgets import AdminFileWidget
 from django.db.models import JSONField
 from django.utils.html import format_html
 from django_json_widget.widgets import JSONEditorWidget
+from eav.admin import BaseEntityAdmin
+from eav.forms import BaseDynamicEntityForm
 
+from apps.car.models import ModelCar
+from apps.product.actions import ImportProductAction
 from apps.product.models import ImportProductData
 from apps.product.models.Price import Price
 from apps.product.models.Product import *
+
+
+class ProductAdminForm(BaseDynamicEntityForm):
+    modelCar = forms.ModelChoiceField(
+        queryset=ModelCar.objects.all(),
+        required=False,
+        label='Модель машины'
+    )
+
+    class Meta:
+        model = Product
+        fields = '__all__'
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Убедитесь, что поля корректно настроены для отображения
+        if self.instance:
+            self.fields['modelCar'].initial = self.instance.eav.modelCar
+
+    def clean(self):
+        cleaned_data = super().clean()
+        # Обработка данных полей EAV при сохранении
+        model_car = cleaned_data.get('modelCar')
+        if model_car:
+            self.instance.eav.modelCar = model_car
+        return cleaned_data
 
 
 class AdminImageWidget(AdminFileWidget):
@@ -33,6 +64,7 @@ class ProductImageTabularInline(admin.StackedInline):
         models.ImageField: {'widget': AdminImageWidget}
     }
 
+
 class ProductDetailTabularInline(admin.TabularInline):
     model = ProductDetail
     extra = 0
@@ -43,18 +75,26 @@ class PriceTabularInline(admin.TabularInline):
     extra = 0
 
 
-class ProductAdmin(admin.ModelAdmin):
+class ProductAdmin(BaseEntityAdmin):
+    form = ProductAdminForm
     list_display = ('id', 'name', 'get_last_price', 'status')
     raw_id_fields = ('modification',)
-    list_filter = ('status', )
+    list_filter = ('status',)
     inlines = [ProductImageTabularInline, ProductDetailTabularInline, PriceTabularInline]
 
     def get_last_price(self, product):
         return product.price.last()
 
 
+@admin.action(description='Импортировать в основную базу продуктов')
+def import_from_recar(modeladmin, request, queryset: ImportProductData):
+    for obj in queryset:
+        ImportProductAction().run(obj.data)
+
+
 class ImportProductAdmin(admin.ModelAdmin):
-    search_fields = ('product_id', )
+    actions = [import_from_recar]
+    search_fields = ('product_id',)
     formfield_overrides = {
         JSONField: {'widget': JSONEditorWidget},
     }

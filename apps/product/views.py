@@ -1,8 +1,10 @@
 from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework import status
-from rest_framework.generics import get_object_or_404
+from drf_yasg.utils import swagger_auto_schema
+from rest_framework import status, mixins
+from rest_framework.generics import get_object_or_404, GenericAPIView
 from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.response import Response
+from rest_framework.viewsets import ModelViewSet, ViewSet
 
 from apps.product import deserializers
 from apps.product import serializers
@@ -15,7 +17,7 @@ from base.views import BaseAPIView
 
 
 class ProductViewSet(BaseAPIView):
-    queryset = Product.objects.select_related('modification').all()
+    queryset = Product.objects.all()
     deserializer_class = deserializers.ProductDeSerializer
     serializer_class = serializers.ProductSerializer
     pagination_class = CustomPageNumberPagination
@@ -69,3 +71,32 @@ class ProductImageView(BaseAPIView):
         instance = get_object_or_404(self.queryset, **kwargs)
         instance.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class ProductViewSetV2(ModelViewSet):
+    deserializer_class = deserializers.ProductDeSerializerV2
+    serializer_class = serializers.ProductSerializerV2
+    queryset = Product.objects.all()
+
+    @swagger_auto_schema(request_body=deserializer_class(),
+                         responses={200: serializer_class},
+                         operation_id='Создание',
+                         tags=['Запчасть V2'],
+                         )
+    def create(self, request, *args, **kwargs):
+        deserializer = self.deserializer_class(data=request.data)
+        deserializer.is_valid(raise_exception=True)
+        product = CreateProductAction(deserializer.validated_data).run()
+        return Response(data=self.get_serializer(product, context={"request": request}).data)
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.filter_queryset(self.get_queryset())
+        list_serializer = serializers.ProductListSerializerV2
+
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = list_serializer(page, many=True, context={"request": request})
+            return self.get_paginated_response(serializer.data)
+
+        serializer = list_serializer(queryset, many=True, context={"request": request})
+        return Response(serializer.data)

@@ -1,3 +1,6 @@
+from eav.models import Attribute
+from rest_framework.exceptions import ValidationError, APIException
+
 from apps.product.models import Product
 from apps.product.models.Price import Price
 from apps.product.models.Product import ProductDetail
@@ -10,14 +13,26 @@ class ProductRepository(BaseRepository):
     @classmethod
     def create(cls, **kwargs):
         product_detail = kwargs.pop('detail')
-        # categories = kwargs.pop('category')
-        oem_codes = kwargs.pop('code')
-        Price.objects.create(cost=kwargs.pop('price'))
+        oem_codes = kwargs.pop('code', [])
+        if kwargs.get('price', None):
+            Price.objects.create(cost=kwargs.pop('price', 0))
+        eav_data = kwargs.pop('eav_attributes', {})
+
         product = cls.model.objects.create(**kwargs)
-        # product.category.add(*categories)
         product.code.add(*oem_codes)
 
         product_detail['product'] = product
+        for attr_name, value in eav_data.items():
+
+            attribute = Attribute.objects.get(name=attr_name)
+            setattr(product.eav, attribute.slug, value)
+
+        try:
+            product.eav.validate_attributes()
+        except Exception as e:
+            raise ValidationError(detail=e.message)
+
+        product.save()
         ProductDetail.objects.create(**product_detail)
         return product
 
