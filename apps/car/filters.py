@@ -13,7 +13,7 @@ class ModificationFilter(django_filters.FilterSet):
 class ManufacturerFilter(django_filters.FilterSet):
     class Meta:
         model = ManufacturerType
-        fields = '__all__'
+        exclude = ('image',)
 
 
 class ModelCarFilter(django_filters.FilterSet):
