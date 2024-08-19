@@ -1,6 +1,7 @@
 from rest_framework import serializers
 
-from apps.car.serializers import ModificationSerializer
+from apps.car.serializers import ModificationSerializer, ModelCarSerializer
+from apps.category.serializers import CategorySerializer
 from apps.product.eav_serializer import ProductEAVSerializer
 from apps.product.models.Product import *
 
@@ -27,7 +28,7 @@ class ProductImageSerializer(serializers.ModelSerializer):
 class ProductSerializer(serializers.ModelSerializer):
     price = serializers.SerializerMethodField()
     color = serializers.CharField(read_only=True)
-    category = serializers.CharField(read_only=True)
+    category = CategorySerializer(read_only=True)
     code = serializers.StringRelatedField(read_only=True,
                                           many=True
                                           )
@@ -69,8 +70,9 @@ class ProductSerializerV2(ProductSerializer):
 
 
 class ProductListSerializerV2(ProductSerializer):
+    modelCar = serializers.SerializerMethodField('get_modelCar')
     class Meta(ProductSerializer.Meta):
-        fields = ('id', 'category', 'pictures', 'status', 'price')
+        fields = ('id', 'name', 'category', 'pictures', 'modelCar', 'status', 'price', 'created_at')
 
     def get_pictures(self, obj: Product):
         return ProductImageSerializer(obj.pictures.all(), many=True, context=self.context).data
@@ -78,3 +80,7 @@ class ProductListSerializerV2(ProductSerializer):
     @staticmethod
     def get_price(obj):
         return obj.latest_price
+
+    @staticmethod
+    def get_modelCar(obj: Product):
+        return ModelCarSerializer(obj.eav.modelCar).data
