@@ -1,7 +1,8 @@
 from django import forms
 from django.contrib import admin
-from django.contrib.admin.widgets import AdminFileWidget
+from django.contrib.admin.widgets import AdminFileWidget, AdminURLFieldWidget
 from django.db.models import JSONField
+from django.urls import reverse
 from django.utils.html import format_html
 from django_json_widget.widgets import JSONEditorWidget
 from eav.admin import BaseEntityAdmin
@@ -18,7 +19,8 @@ class ProductAdminForm(BaseDynamicEntityForm):
     modelCar = forms.ModelChoiceField(
         queryset=ModelCar.objects.all(),
         required=False,
-        label='Модель машины'
+        label='Модель машины',
+        widget=AdminURLFieldWidget(attrs={'class': 'vForeignKeyRawIdAdminField'})
     )
 
     class Meta:
@@ -30,6 +32,10 @@ class ProductAdminForm(BaseDynamicEntityForm):
         # Убедитесь, что поля корректно настроены для отображения
         if self.instance:
             self.fields['modelCar'].initial = self.instance.eav.modelCar
+            model_car = self.instance.eav.modelCar
+            if model_car:
+                url = reverse('admin:car_modelcar_change', args=[model_car.pk])
+                self.fields['modelCar'].help_text = format_html('<a href="{}">Перейти к модели машины</a>', url)
 
     def clean(self):
         cleaned_data = super().clean()

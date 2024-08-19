@@ -1,3 +1,4 @@
+from django.core.exceptions import FieldError
 from django.http import Http404
 from rest_framework import exceptions
 from rest_framework.exceptions import APIException, PermissionDenied
@@ -20,10 +21,12 @@ def custom_exception_handler(exc, context):
             exc = exceptions.NotFound(*(exc.args))
         elif isinstance(exc, PermissionDenied):
             exc = exceptions.PermissionDenied(*(exc.args))
-        elif isinstance(exc, (AssertionError, AttributeError)):
+        elif isinstance(exc, (AssertionError, AttributeError, FieldError, ValueError)):
             return Response({
                 'detail': exc.args
             }, status=500)
+        else:
+            return exc
 
         message = exc.args[0] if isinstance(exc.args, (list, tuple)) else exc.args
         response_data = {

@@ -1,15 +1,16 @@
+from django.db.models import OuterRef, Subquery, Prefetch
 from django_filters.rest_framework import DjangoFilterBackend
 from drf_yasg.utils import swagger_auto_schema
-from rest_framework import status, mixins
-from rest_framework.generics import get_object_or_404, GenericAPIView
+from rest_framework import status
+from rest_framework.generics import get_object_or_404
 from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.response import Response
-from rest_framework.viewsets import ModelViewSet, ViewSet
+from rest_framework.viewsets import ModelViewSet
 
-from apps.product import deserializers
-from apps.product import serializers
+from apps.product import deserializers, serializers
 from apps.product.actions import CreateProductAction, UpdateProductAction
-from apps.product.filters import ProductFilters
+from apps.product.filters import DynamicProductFilterSet, ProductFilters
+from apps.product.models.Price import Price
 from apps.product.models.Product import Product, ProductImage
 from apps.product.repository import ProductRepository
 from base.paginations import CustomPageNumberPagination
@@ -76,10 +77,13 @@ class ProductImageView(BaseAPIView):
 class ProductViewSetV2(ModelViewSet):
     deserializer_class = deserializers.ProductDeSerializerV2
     serializer_class = serializers.ProductSerializerV2
-    queryset = Product.objects.all()
+    queryset = Product.objects.prefetch_related('price', 'stock__warehouse', 'pictures').select_related(
+        'category', ).all()
+    filter_backends = [DjangoFilterBackend]
+    filterset_class = DynamicProductFilterSet
 
     @swagger_auto_schema(request_body=deserializer_class(),
-                         responses={200: serializer_class},
+                         responses={201: serializer_class},
                          operation_id='Создание',
                          tags=['Запчасть V2'],
                          )
@@ -89,8 +93,20 @@ class ProductViewSetV2(ModelViewSet):
         product = CreateProductAction(deserializer.validated_data).run()
         return Response(data=self.get_serializer(product, context={"request": request}).data)
 
+    @swagger_auto_schema(responses={200: serializers.ProductListSerializerV2},
+                         operation_id='Список',
+                         tags=['Запчасть V2'],
+                         )
     def list(self, request, *args, **kwargs):
-        queryset = self.filter_queryset(self.get_queryset())
+        queryset = self.filter_queryset(
+            self.get_queryset().select_related(
+                'stock__warehouse').prefetch_related(
+                'price',
+                Prefetch('modification'),
+                Prefetch('pictures'),
+            ))
+        latest_price = Price.objects.filter(product=OuterRef('pk')).order_by('-created_at')
+        queryset = queryset.annotate(latest_price=Subquery(latest_price.values('cost')[:1]))
         list_serializer = serializers.ProductListSerializerV2
 
         page = self.paginate_queryset(queryset)

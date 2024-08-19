@@ -70,7 +70,11 @@ class ProductSerializerV2(ProductSerializer):
 
 class ProductListSerializerV2(ProductSerializer):
     class Meta(ProductSerializer.Meta):
-        fields = ('id', 'category', 'pictures', 'status', 'warehouse', 'price',)
+        fields = ('id', 'category', 'pictures', 'status', 'price')
 
     def get_pictures(self, obj: Product):
         return ProductImageSerializer(obj.pictures.all(), many=True, context=self.context).data
+
+    @staticmethod
+    def get_price(obj):
+        return obj.latest_price
