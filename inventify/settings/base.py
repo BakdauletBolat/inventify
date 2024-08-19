@@ -31,7 +31,8 @@ THIRD_PARTY_APPS = [
     'drf_yasg',
     'django_celery_results',
     'django_json_widget',
-    'eav'
+    'eav',
+    'silk'
 ]
 
 LOCAL_APPS = [
@@ -58,7 +59,8 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'base.middlewares.RequestMiddleware.RequestMiddleware'
+    'base.middlewares.RequestMiddleware.RequestMiddleware',
+    'silk.middleware.SilkyMiddleware',
 
 ]
 
@@ -187,4 +189,4 @@ CACHES = {
     }
 }
 
-EAV2_PRIMARY_KEY_FIELD = "django.db.models.BigAutoField" # as example
+EAV2_PRIMARY_KEY_FIELD = "django.db.models.BigAutoField"  # as example
