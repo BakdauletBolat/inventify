@@ -2,13 +2,15 @@ from django.utils.decorators import method_decorator
 from django.views.decorators.cache import cache_page
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.generics import ListAPIView
+from rest_framework.mixins import ListModelMixin, RetrieveModelMixin
+from rest_framework.viewsets import GenericViewSet
 
 from apps.category.filters import CategoryFilter
 from apps.category.models import Category
 from apps.category.serializers import CategorySerializer, CategoryTreeSerializer
 
 
-class CategoryListAPIView(ListAPIView):
+class CategoryListAPIView(GenericViewSet, RetrieveModelMixin, ListModelMixin):
     queryset = Category.objects.all().order_by('id')
     serializer_class = CategorySerializer
     filter_backends = [DjangoFilterBackend]
