@@ -1,8 +1,9 @@
-from django.http import JsonResponse
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.generics import ListAPIView
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from rest_framework.mixins import RetrieveModelMixin, ListModelMixin
+from rest_framework.viewsets import GenericViewSet
 
 from apps.car.filters import *
 from apps.car.serializers import *
@@ -17,7 +18,7 @@ class ProductModificationListAPIView(ListAPIView):
     filterset_class = ModificationFilter
 
 
-class ManufacturerListAPIView(ListAPIView):
+class ManufacturerListAPIView(GenericViewSet, ListModelMixin, RetrieveModelMixin):
     queryset = ManufacturerType.objects.all()
     serializer_class = ManufacturerTypeSerializer
     filter_backends = [DjangoFilterBackend]
