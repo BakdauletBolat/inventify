@@ -71,6 +71,7 @@ class ProductSerializerV2(ProductSerializer):
 
 class ProductListSerializerV2(ProductSerializer):
     modelCar = serializers.SerializerMethodField('get_modelCar')
+
     class Meta(ProductSerializer.Meta):
         fields = ('id', 'name', 'category', 'pictures', 'modelCar', 'status', 'price', 'created_at')
 

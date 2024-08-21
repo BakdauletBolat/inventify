@@ -1,8 +1,10 @@
 import django_filters
-from django.db.models import OuterRef, Exists, Subquery
+from django.db.models import OuterRef, Exists, Subquery, Q, QuerySet
+from django.db.models.functions.text import Lower
 from eav.models import Attribute, Value
 
 from apps.car.models.Model import ModelCar
+from apps.category.models import Category
 from apps.product.models import Product
 from apps.product.models.Price import Price
 
@@ -25,11 +27,28 @@ class ProductFilters(django_filters.FilterSet):
 class DynamicProductFilterSet(django_filters.FilterSet):
     price = django_filters.RangeFilter(field_name='price__cost')
     category = django_filters.BaseInFilter(field_name='category__id', lookup_expr='in')
+    search = django_filters.CharFilter(method='filter_by_product_or_category_name')
 
     class Meta:
         model = Product
         fields = []
 
+    @staticmethod
+    def filter_by_product_or_category_name(queryset: QuerySet, name, value):
+        categories = Category.objects.filter(name__icontains=value)
+        all_category = []
+        for category in categories:
+            all_category.extend(category.get_all_descendants())
+        products = Product.objects.filter(category__in=all_category)
+        product_queryset = queryset.filter(name__icontains=value)
+
+        # Получаем списки ID из обоих queryset и объединяем их
+        product_ids = list(product_queryset.values_list('id', flat=True))
+        product_ids += list(products.values_list('id', flat=True))
+
+        # Возвращаем объединённый queryset с помощью filter
+        queryset = queryset.filter(id__in=product_ids)
+        return queryset
     @classmethod
     def get_filters(cls):
         # Получаем существующие фильтры
