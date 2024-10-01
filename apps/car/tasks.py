@@ -1,5 +1,6 @@
 from celery import shared_task
 
+from apps.car.actions.ImportModifcation import ImportModification
 from apps.car.models.Model import ModelCar
 from apps.car.models.ModificationDraft import ModificationDraft
 from apps.product.models.Product import Product
@@ -53,25 +54,27 @@ def import_car_data_recar():
 
 
 @shared_task
-def update_eav_attr(modification_attr: ModificationDraft):
-    modification = modification_attr.data.get('modification') if modification_attr.data.get(
+def update_eav_attr(modification_attr: dict, product_id: int):
+    modification = modification_attr.get('modification') if modification_attr.get(
         'modification') is not None else {}
     product = Product.objects.get(
-        id=modification_attr.product_id,
+        id=product_id,
     )
 
-    product.mileage = modification_attr.data['mileage']
+    product.mileage = modification_attr['mileage']
     try:
-        product.eav.bodytype = modification_attr.data['bodyType']
-        product.eav.fueltype = modification_attr.data['fuelType']
-        product.eav.geartype = modification_attr.data['gearType']
-        product.eav.drivetype = modification_attr.data['driveType']
-        product.eav.steeringtype = modification_attr.data['steeringType']
-        product.eav.axleconfiguration = modification_attr.data['axleConfiguration']
+        product.eav.bodytype = modification_attr['bodyType']
+        product.eav.fueltype = modification_attr['fuelType']
+        product.eav.geartype = modification_attr['gearType']
+        product.eav.drivetype = modification_attr['driveType']
+        product.eav.steeringtype = modification_attr['steeringType']
+        product.eav.axleconfiguration = modification_attr['axleConfiguration']
         try:
-            product.eav.modelCar = ModelCar.objects.get(id=modification_attr.data['model']['id'])
+            product.eav.modelCar = ModelCar.objects.get(id=modification_attr['model']['id'])
         except Exception as e:
-            print(modification_attr.id)
+            ImportModification().run(modification_attr['model']['id'])
+            product.eav.modelCar = ModelCar.objects.get(id=modification_attr['model']['id'])
+            print(modification_attr)
         product.eav.power = modification.get('power', None)
         product.eav.capacity = modification.get('capacity', None)
         product.eav.numberofcycle = modification.get('numOfCyl', None)
@@ -80,5 +83,5 @@ def update_eav_attr(modification_attr: ModificationDraft):
         product.modification_id = modification.get('id', None)
         product.save()
     except Exception as e:
-        product.eav.bodytype = modification_attr.data['bodyType'].replace('C', 'С')
+        product.eav.bodytype = modification_attr['bodyType'].replace('C', 'С')
         product.save()

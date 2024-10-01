@@ -24,4 +24,4 @@ def update_eav_attrs():
         modification_attrs = ModificationDraft.objects.filter(product_id__in=batch_ids)
 
         for modification_attr in modification_attrs:
-            update_eav_attr.delay(modification_attr)
+            update_eav_attr.delay(modification_attr.data, modification_attr.product_id)
