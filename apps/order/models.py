@@ -5,8 +5,9 @@ from django.utils.translation import gettext as _
 
 from apps.order.enums import *
 from apps.product.models import Product
-from apps.stock.models import Quality, Stock, Warehouse
+from apps.stock.models import Stock, Warehouse
 from base import models as base_models
+from apps.address.models import Address
 
 
 def default_uuid():
@@ -18,10 +19,19 @@ class Order(base_models.BaseModel):
     uuid = models.UUIDField(unique=True, default=default_uuid, blank=True)
     payment_type = models.IntegerField(choices=PaymentTypeChoices.choices, default=PaymentTypeChoices.CASH)
     delivery_type = models.IntegerField(choices=DeliveryTypeChoices.choices, default=DeliveryTypeChoices.PICKUP)
+    address = models.ForeignKey(Address, related_name='orders', on_delete=models.SET_NULL,
+                                null=True, blank=True, verbose_name='Адрес доставки')
     comment = models.TextField(null=True, blank=True)
     discount = models.IntegerField(default=0)
-    warehouse = models.ForeignKey(Warehouse, on_delete=models.CASCADE)
+    warehouse = models.ForeignKey(Warehouse, on_delete=models.SET_NULL, null=True, blank=True)
     client = models.CharField(default='', null=True, blank=True, max_length=255)
+
+    # Поля для данных клиента
+    first_name = models.CharField('Имя', max_length=255, null=True, blank=True)
+    last_name = models.CharField('Фамилия', max_length=255, null=True, blank=True)
+    phone_number = models.CharField('Номер телефона', max_length=20, null=True, blank=True)
+    email = models.EmailField('Email', max_length=255, null=True, blank=True)
+
     status = models.IntegerField(choices=OrderStatusChoices.choices, default=OrderStatusChoices.PROCESSING)
     payment_status = models.IntegerField(choices=PaymentStatusChoices.choices, default=PaymentStatusChoices.PENDING)
 
@@ -60,29 +70,17 @@ class Order(base_models.BaseModel):
 
 class OrderItem(models.Model):
     product = models.ForeignKey(Product, on_delete=models.CASCADE)
-    quantity = models.PositiveIntegerField()
+    quantity = models.PositiveIntegerField(default=1)
     order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name='goods')
-    quality = models.ForeignKey(Quality, on_delete=models.CASCADE)
 
     def clean(self):
-        stock = Stock.objects.filter(product=self.product, quality=self.quality).last()
+        stock = Stock.objects.filter(product=self.product).last()
         if stock is None:
             raise ValidationError(f"_(Нету остатков товара: {self.product.name}")
         if stock.quantity - self.quantity < 0:
             raise ValidationError(f"Не хватает товара текущее кол: {stock.quantity}")
 
     def save(self, *args, **kwargs):
-        # self.clean()
-        # stocks = Stock.objects.filter(product=self.product, quality_id=self.quality.id)
-        # stock = stocks.last()
-        # stock_history = StockHistory(
-        #     stock=stock,
-        #     quantity_before=stock.quantity,
-        #     quantity_after=stock.quantity - self.quantity
-        # )
-        # stock_history.save()
-        # stock.quantity -= self.quantity
-        # stock.save()
         super(OrderItem, self).save(*args, **kwargs)
 
     class Meta:

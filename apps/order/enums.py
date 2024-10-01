@@ -4,7 +4,6 @@ from django.db import models
 class PaymentTypeChoices(models.IntegerChoices):
     CASH = 1, 'Наличные'
     INTERNET_PAYMENT = 2, 'Интернет оплата'
-    CART = 3, 'Картой'
 
 
 class DeliveryTypeChoices(models.IntegerChoices):
