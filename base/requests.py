@@ -148,18 +148,22 @@ class RecarRequest(Request):
         response = self.post(data)
         return response['data']['engines']['nodes']
 
-    def get_products(self):
+    def get_products(self, statuses=None):
+        if statuses is None:
+            statuses = ["not_parsed", "in_stock", "reserved", "sold"]
         data = {
             "operationName": "FetchParts",
             "variables": {
                 "payload": {
-                    "statuses": ["in_stock", "reserved", "not_parsed", "sold"],
+                    "statuses": statuses,
                     "defaultQuery": False,
                     "departmentIds": "9182",
-                    "partnership": False
+                    "partnership": False,
+                    "isRootsChild": True,
+                    "nearestParentId": None
                 },
                 "page": "1",
-                "size": "70000"
+                "size": "100000"
             },
             "query": "query FetchParts($payload: GetPartsInput, $size: Int, $page: Int) {\n  parts(payload: $payload, size: $size, page: $page) {\n    nodes {\n      id\n                                         __typename\n    }\n    __typename\n  }\n}\n"
         }
@@ -216,3 +220,19 @@ class RecarRequest(Request):
         }
         response = self.post(data)
         return response['data']['locations']['nodes']
+
+    def get_warehouse_detail(self, locationId):
+        data = {
+            "operationName": "FetchLocationParts",
+            "variables": {
+                "payload": {
+                    "nearestParentId": None,
+                    "locationId": locationId
+                },
+                "page": 1,
+                "size": "100"
+            },
+            "query": "query FetchLocationParts($payload: GetPartsInput, $page: Int, $size: Int) {\n  parts(payload: $payload, page: $page, size: $size) {\n    nodes {\n      id\n            location {\n        id\n        name\n        departmentId\n        __typename\n      }\n      oemCodes {\n        id\n        code\n        __typename\n      }\n            quantity\n      __typename\n    }\n    __typename\n  }\n}\n"
+        }
+        response = self.post(data)
+        return response['data']['parts']['nodes']

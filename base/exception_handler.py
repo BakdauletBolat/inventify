@@ -26,7 +26,7 @@ def custom_exception_handler(exc, context):
                 'detail': exc.args
             }, status=500)
         else:
-            return exc
+            return exception_handler(exc, context)
 
         message = exc.args[0] if isinstance(exc.args, (list, tuple)) else exc.args
         response_data = {

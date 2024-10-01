@@ -4,7 +4,7 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 
-load_dotenv('.env.prod')
+load_dotenv('.env.dev')
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
@@ -29,10 +29,12 @@ THIRD_PARTY_APPS = [
     'rest_framework_simplejwt',
     'gunicorn',
     'drf_yasg',
+    'django_celery_beat',
     'django_celery_results',
     'django_json_widget',
     'eav',
-    'silk'
+    'silk',
+    'djangoql'
 ]
 
 LOCAL_APPS = [
@@ -46,6 +48,7 @@ LOCAL_APPS = [
     'apps.product',
     'apps.order',
     'apps.car',
+    'apps.address',
 ]
 
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
@@ -60,7 +63,7 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'base.middlewares.RequestMiddleware.RequestMiddleware',
-    'silk.middleware.SilkyMiddleware',
+    # 'silk.middleware.SilkyMiddleware',
 
 ]
 
@@ -182,7 +185,7 @@ CELERY_BROKER_URL = os.environ.get('CELERY_BROKER_URL')
 CACHES = {
     'default': {
         'BACKEND': 'django_redis.cache.RedisCache',
-        'LOCATION': os.environ.get('CELERY_CACHE_URL'),  # Убедитесь, что Redis запущен на этом хосте и порту
+        'LOCATION': os.environ.get('CELERY_CACHE_URL', ),  # Убедитесь, что Redis запущен на этом хосте и порту
         'OPTIONS': {
             'CLIENT_CLASS': 'django_redis.client.DefaultClient',
         }
@@ -190,3 +193,4 @@ CACHES = {
 }
 
 EAV2_PRIMARY_KEY_FIELD = "django.db.models.BigAutoField"  # as example
+CELERY_BEAT_SCHEDULER = 'django_celery_beat.schedulers:DatabaseScheduler'

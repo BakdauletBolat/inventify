@@ -48,8 +48,8 @@ class ProductSerializer(serializers.ModelSerializer):
     @staticmethod
     def get_warehouse(obj: Product):
         from apps.stock.serializers import WareHouseSerializer
-        if hasattr(obj, 'stock'):
-            return WareHouseSerializer(obj.stock.warehouse).data
+        if obj.stock.exists():
+            return WareHouseSerializer(obj.stock.filter(quantity__gt=0).first().warehouse).data
         return None
 
     class Meta:
@@ -85,3 +85,10 @@ class ProductListSerializerV2(ProductSerializer):
     @staticmethod
     def get_modelCar(obj: Product):
         return ModelCarSerializer(obj.eav.modelCar).data
+
+
+class AssignWarehouseSerializer(serializers.Serializer):
+    from apps.stock.models import Warehouse
+
+    product_id = serializers.PrimaryKeyRelatedField(queryset=Product.objects.all(), source='product')
+    warehouse_id = serializers.PrimaryKeyRelatedField(queryset=Warehouse.objects.all(), source='warehouse')

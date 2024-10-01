@@ -1,8 +1,6 @@
 from django.core.management import BaseCommand
 
-from apps.product.models.ImportProductData import ImportProductData
-from apps.product.tasks import import_product_draft
-from base.requests import RecarRequest
+from apps.product.tasks import create_products_draft
 
 
 class Command(BaseCommand):
@@ -10,14 +8,5 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         self.stdout.write('seeding data...')
-        create_products()
+        create_products_draft()
         self.stdout.write('done.')
-
-
-def create_products():
-    products_recar = RecarRequest().get_products()
-    product_ids = list(map(lambda x: int(x['id']), products_recar))
-    products = ImportProductData.objects.filter(product_id__in=product_ids)
-    diffrence_products = set(product_ids).difference(products.values_list('product_id', flat=True))
-    for product_data in diffrence_products:
-        import_product_draft.delay(product_data)

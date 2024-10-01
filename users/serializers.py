@@ -3,15 +3,14 @@ from django.contrib.auth.password_validation import validate_password
 from rest_framework import serializers
 
 from handbook.models import City
-from users.models.Address import Address
-from users.models.User import User
+from users.models.User import ClientProfile
 
 
 class UserSerializer(serializers.ModelSerializer):
     city = serializers.PrimaryKeyRelatedField(queryset=City.objects.all())
 
     class Meta:
-        model = User
+        model = ClientProfile
         extra_kwargs = {
             "profile_type": {"required": True},
             "password": {"write_only": True, 'required': False}
@@ -30,12 +29,3 @@ class UserRegisterSerializer(UserSerializer):
         attrs['password'] = make_password(attrs['password'])
         attrs.pop('password2')
         return attrs
-
-
-class AddressSerializer(serializers.ModelSerializer):
-    user = UserSerializer()
-    street = serializers.CharField(write_only=True, required=True)
-
-    class Meta:
-        model = Address
-        exclude = ('city',)

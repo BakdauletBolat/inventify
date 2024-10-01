@@ -6,12 +6,11 @@ from loguru import logger
 from apps.car.models.Model import *
 from apps.car.models.Modification import Modification
 from apps.car.models.ModificationDetails import *
-from apps.category.models import Category
 from apps.product.enums import StatusChoices
 from apps.product.models.Price import Price
 from apps.product.models.Product import Product
 from base.requests import RecarRequest
-from users.models.User import User
+from users.models.User import SupervisorProfile
 
 models = [Product, PlatformType, Price]
 # python manage.py seed --mode=refresh
@@ -108,7 +107,6 @@ def create_modification():
         steering_types.append(SteeringType(id=steeringType['id'],
                                            name=steeringType['name']))
 
-
     AxleConfiguration.objects.bulk_create(axles)
     BodyType.objects.bulk_create(bodies, **bulk_create_options)
     DriveType.objects.bulk_create(drive_types, **bulk_create_options)
@@ -130,7 +128,7 @@ def run_seed(self, mode):
     clear_data()
     if mode == MODE_CLEAR:
         return
-    User.objects.create_superuser(phone="+77089531792", password="123")
+    SupervisorProfile.objects.create_superuser(phone="+77089531792", password="123")
 
     # Creating 15 addresses
     create_modification()

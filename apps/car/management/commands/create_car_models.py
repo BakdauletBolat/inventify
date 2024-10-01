@@ -2,6 +2,7 @@ from django.core.management import BaseCommand
 
 from apps.car.models.Model import ManufacturerType, ModelCar
 from base.requests import RecarRequest
+from apps.car.tasks import import_model_car
 
 
 class Command(BaseCommand):
@@ -14,19 +15,21 @@ class Command(BaseCommand):
 
 
 def create_models():
+    bulk_create_options = {
+        "update_conflicts": True,
+        "unique_fields": ['id'],
+        "update_fields": ['name']
+    }
     recar_request = RecarRequest()
+    modification_params = recar_request.get_modification_params()
+    manufacturers = []
+
+    for manufacturer in modification_params['manufacturers']['nodes']:
+        manufacturers.append(ManufacturerType(id=manufacturer['id'],
+                                              name=manufacturer['title']))
+
+    ManufacturerType.objects.bulk_create(manufacturers, **bulk_create_options)
+
     manufacturers = ManufacturerType.objects.values_list('id', flat=True)
     for manufacturer_id in manufacturers:
-        cars = []
-        car_models = recar_request.get_car_models(manufacturerId=manufacturer_id)
-        for model in car_models:
-            cars.append(ModelCar(startDate=model.get('startDate', None),
-                                 endDate=model.get('endDate', None),
-                                 id=model['id'],
-                                 name=model['name'],
-                                 manufacturer_id=manufacturer_id
-                                 ))
-        ModelCar.objects.bulk_create(cars,
-                                     unique_fields=['id'],
-                                     update_fields=['startDate'],
-                                     update_conflicts=True)
+        import_model_car.apply(manufacturer_id)

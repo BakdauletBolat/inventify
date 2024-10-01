@@ -8,11 +8,12 @@ from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
 
 from apps.product import deserializers, serializers
-from apps.product.actions import CreateProductAction, UpdateProductAction
+from apps.product.actions import ProductAction
 from apps.product.filters import DynamicProductFilterSet, ProductFilters
 from apps.product.models.Price import Price
 from apps.product.models.Product import Product, ProductImage
 from apps.product.repository import ProductRepository
+from apps.product.serializers import AssignWarehouseSerializer
 from base.paginations import CustomPageNumberPagination
 from base.views import BaseAPIView
 
@@ -28,7 +29,7 @@ class ProductViewSet(BaseAPIView):
     def post(self, request, *args, **kwargs):
         serializer = self.get_deserializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        product = CreateProductAction(serializer.validated_data).run()
+        product = ProductAction().create(serializer.validated_data)
         return Response(self.serializer_class(product).data, status=status.HTTP_201_CREATED)
 
     def get(self, request, *args, **kwargs):
@@ -47,7 +48,7 @@ class ProductViewSet(BaseAPIView):
         serializer = self.get_deserializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         instance = get_object_or_404(self.queryset, **kwargs)
-        product = UpdateProductAction(serializer.validated_data).run(instance)
+        product = ProductAction().update(instance, serializer.validated_data)
         return Response(self.serializer_class(product).data, status=status.HTTP_200_OK)
 
     def delete(self, request, *args, **kwargs):
@@ -77,7 +78,7 @@ class ProductImageView(BaseAPIView):
 class ProductViewSetV2(ModelViewSet):
     deserializer_class = deserializers.ProductDeSerializerV2
     serializer_class = serializers.ProductSerializerV2
-    queryset = Product.objects.prefetch_related('price', 'stock__warehouse', 'pictures').select_related(
+    queryset = Product.objects.prefetch_related('price', 'pictures').select_related(
         'category', ).all()
     filter_backends = [DjangoFilterBackend]
     filterset_class = DynamicProductFilterSet
@@ -90,7 +91,7 @@ class ProductViewSetV2(ModelViewSet):
     def create(self, request, *args, **kwargs):
         deserializer = self.deserializer_class(data=request.data)
         deserializer.is_valid(raise_exception=True)
-        product = CreateProductAction(deserializer.validated_data).run()
+        product = ProductAction().create(deserializer.validated_data)
         return Response(data=self.get_serializer(product, context={"request": request}).data)
 
     @swagger_auto_schema(responses={200: serializers.ProductListSerializerV2},
@@ -100,7 +101,7 @@ class ProductViewSetV2(ModelViewSet):
     def list(self, request, *args, **kwargs):
         queryset = self.filter_queryset(
             self.get_queryset().select_related(
-                'stock__warehouse').prefetch_related(
+                ).prefetch_related(
                 'price',
                 Prefetch('modification'),
                 Prefetch('pictures'),
@@ -116,3 +117,18 @@ class ProductViewSetV2(ModelViewSet):
 
         serializer = list_serializer(queryset, many=True, context={"request": request})
         return Response(serializer.data)
+
+    def update(self, request, *args, **kwargs):
+        serializer = self.deserializer_class(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        instance = get_object_or_404(self.queryset, **kwargs)
+        product = ProductAction().update(instance, serializer.validated_data)
+        return Response(self.get_serializer(product).data, status=status.HTTP_200_OK)
+
+    def assign_warehouse(self, request, *args, **kwargs):
+        serializer = AssignWarehouseSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        ProductAction().assign_to_warehouse(serializer.validated_data['product'],
+                                            serializer.validated_data['warehouse'])
+        return Response(status=status.HTTP_204_NO_CONTENT)

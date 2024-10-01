@@ -9,6 +9,7 @@ urlpatterns = yasg_urlpatterns + [
     path('admin/', admin.site.urls),
     path('api/', include([
         path('users/', include('users.urls')),
+        path('address/', include('apps.address.urls')),
         path('', include('apps.product.urls')),
         path('car/', include('apps.car.urls')),
         path('category/', include('apps.category.urls')),

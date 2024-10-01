@@ -14,7 +14,8 @@ urlpatterns = [
         path('create/', views.ProductViewSetV2.as_view({'post': 'create'})),
         path('<int:pk>/', views.ProductViewSetV2.as_view({'get': 'retrieve'})),
         path('<int:pk>/delete/', views.ProductViewSetV2.as_view({'delete': 'destroy'})),
-        path('<int:pk>/delete/', views.ProductViewSetV2.as_view({'patch': 'update'})),
+        path('<int:pk>/update/', views.ProductViewSetV2.as_view({'patch': 'update'})),
+        path('assign-warehouse/', views.ProductViewSetV2.as_view({'post': 'assign_warehouse'}))
 
     ]))
 ]

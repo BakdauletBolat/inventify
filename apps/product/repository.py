@@ -40,12 +40,25 @@ class ProductRepository(BaseRepository):
     def update(cls, instance, **kwargs):
         price = kwargs.pop('price', None)
         details_data = kwargs.pop('detail', {})
-
+        codes = kwargs.pop('code', [])
+        eav_data = kwargs.pop('eav_attributes', {})
         ProductDetail.objects.update_or_create(product=instance,
                                                defaults={**details_data},
                                                )
+
+        for attr_name, value in eav_data.items():
+
+            attribute = Attribute.objects.get(name=attr_name)
+            setattr(instance.eav, attribute.slug, value)
+
+        try:
+            instance.eav.validate_attributes()
+        except Exception as e:
+            raise ValidationError(detail=e.message)
+
         if price is not None:
             Price.objects.get_or_create(product=instance, cost=price)
 
         super().update(instance, **kwargs)
+        instance.code.set(codes)
         return instance

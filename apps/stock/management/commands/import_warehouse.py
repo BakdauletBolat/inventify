@@ -1,7 +1,6 @@
 from django.core.management import BaseCommand
 
-from apps.stock.actions import ImportWarehouseAction
-from base.requests import RecarRequest
+from apps.stock.tasks import import_warehouse
 
 
 class Command(BaseCommand):
@@ -9,16 +8,5 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         self.stdout.write('import warehouse...')
-        create_products()
+        import_warehouse()
         self.stdout.write('done.')
-
-
-def create_products():
-    page = 1
-    size = 50
-    # warehouses = RecarRequest().get_warehouses()
-
-    for pageNumber in range(page, 86, 1):
-        warehouses = RecarRequest().get_warehouses(pageNumber, size)
-        for warehouse in warehouses:
-            ImportWarehouseAction().run(warehouse)

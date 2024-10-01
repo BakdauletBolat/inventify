@@ -1,6 +1,8 @@
 from django.contrib import admin
+from django.db.models import JSONField
+from django_json_widget.widgets import JSONEditorWidget
+from djangoql.admin import DjangoQLSearchMixin
 
-from apps.product.enums import StatusChoices
 # Register your models here.
 from apps.stock import models
 
@@ -11,38 +13,47 @@ class StockTabularInline(admin.TabularInline):
     extra = 0
 
 
-class WarehouseAdmin(admin.ModelAdmin):
+class WarehouseAdmin(DjangoQLSearchMixin, admin.ModelAdmin):
     list_display = ('id', 'name', 'min_stock_level', 'get_stock')
-    search_fields = ('name',)
+    search_fields = ('name', 'product',)
     filter_horizontal = ('products_category',)
     inlines = [StockTabularInline, ]
 
     def get_stock(self, warehouse: models.Warehouse):
-        return warehouse.stock_set.filter(product__status=StatusChoices.IN_STOCK).count()
+        return warehouse.get_stock()
 
 
 admin.site.register(models.Warehouse, WarehouseAdmin)
 
 
-class StockAdmin(admin.ModelAdmin):
+class StockAdmin(DjangoQLSearchMixin, admin.ModelAdmin):
     list_display = ('id', 'product', 'product_id', 'warehouse', 'quality', 'quantity')
+    search_fields = ('product_id',)
 
-    # def has_delete_permission(self, request, obj=None):
-    #     return False
-    #
-    # def has_add_permission(self, request):
-    #     return False
-    #
-    # def has_change_permission(self, request, obj=None):
-    #     return False
+    def has_delete_permission(self, request, obj=None):
+        return request.user.is_superuser
 
-    raw_id_fields = ('product', 'warehouse', )
+    def has_add_permission(self, request):
+        return request.user.is_superuser
+
+    def has_change_permission(self, request, obj=None):
+        return request.user.is_superuser
+
+    raw_id_fields = ('product', 'warehouse',)
 
 
 class StockMovementAdmin(admin.ModelAdmin):
     raw_id_fields = ('product', 'warehouse',)
 
 
+class WarehouseDraftsAdmin(admin.ModelAdmin):
+    search_fields = ('warehouse_id',)
+    formfield_overrides = {
+        JSONField: {'widget': JSONEditorWidget},
+    }
+
+
 admin.site.register(models.Stock, StockAdmin)
 admin.site.register(models.Quality)
 admin.site.register(models.StockMovement, StockMovementAdmin)
+admin.site.register(models.WarehouseDrafts, WarehouseDraftsAdmin)

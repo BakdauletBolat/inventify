@@ -7,6 +7,8 @@ from django.utils.html import format_html
 from django_json_widget.widgets import JSONEditorWidget
 from eav.admin import BaseEntityAdmin
 from eav.forms import BaseDynamicEntityForm
+from djangoql.admin import DjangoQLSearchMixin
+
 
 from apps.car.models import ModelCar
 from apps.product.actions import ImportProductAction
@@ -81,9 +83,10 @@ class PriceTabularInline(admin.TabularInline):
     extra = 0
 
 
-class ProductAdmin(BaseEntityAdmin):
+class ProductAdmin(DjangoQLSearchMixin, BaseEntityAdmin):
     form = ProductAdminForm
-    list_display = ('id', 'name', 'get_last_price', 'status')
+    search_fields = ('name',)
+    list_display = ('id', 'name', 'status')
     raw_id_fields = ('modification',)
     list_filter = ('status',)
     inlines = [ProductImageTabularInline, ProductDetailTabularInline, PriceTabularInline]

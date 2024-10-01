@@ -38,7 +38,6 @@ class User(AbstractBaseUser):
     profile_type = models.IntegerField(choices=PROFILE_TYPES.choices, default=PROFILE_TYPES.CLIENT)
     city = models.ForeignKey(City, on_delete=models.CASCADE, related_name='users', null=True, blank=True,
                              verbose_name='Город')
-    postcode = models.CharField('Почтовый индекс', max_length=255, null=True, blank=True)
 
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
@@ -65,17 +64,26 @@ class User(AbstractBaseUser):
         return self.is_superuser
 
 
-class SupervisorProfile(base_models.BaseModel):
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
+class SupervisorProfile(User):
+    class Meta:
+        verbose_name = 'Админ'
+        verbose_name_plural = 'Админы'
 
 
-class EmployeeProfile(base_models.BaseModel):
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
+class EmployeeProfile(User):
+    class Meta:
+        verbose_name = 'Сотрудник'
+        verbose_name_plural = 'Сотрудник'
 
 
-class SellerProfile(base_models.BaseModel):
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
+class SellerProfile(User):
+    class Meta:
+        verbose_name = 'Продавец'
+        verbose_name_plural = 'Продавец'
 
 
-class ClientProfile(base_models.BaseModel):
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
+class ClientProfile(User):
+    class Meta:
+        verbose_name = 'Клиент'
+        verbose_name_plural = 'Клиенты'
+    # user = models.ForeignKey(User, on_delete=models.CASCADE)

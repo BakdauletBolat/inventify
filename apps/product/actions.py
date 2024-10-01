@@ -2,41 +2,61 @@ from io import BytesIO
 
 import requests
 from PIL import Image
-from django.core.cache import cache
 from django.core.files.base import ContentFile
 from django.db import transaction, utils
+from rest_framework.exceptions import ValidationError
 
-from apps.car.actions.ImportModifcation import ImportModification
-from apps.car.models.Modification import Modification
-from apps.product.enums import StatusChoicesRecar
-from apps.product.models import Product
+from apps.car.models import ModificationDraft
+from apps.car.tasks import update_eav_attr
+from apps.product.enums import StatusChoicesRecar, StatusChoices
 from apps.product.models.Price import Price
-from apps.product.models.Product import ProductDetail, ProductImage
+from apps.product.models.Product import ProductDetail, ProductImage, Product
 from apps.product.repository import ProductRepository
-from apps.stock.models import Stock
-from base.requests import RecarRequest
+from apps.stock.actions import StockAction
+from apps.stock.models import Stock, Warehouse
 
 
-class CreateProductAction:
+class ProductAction:
 
-    def __init__(self, data):
-        self.data = data
-
-    def run(self):
+    def create(self, data):
         with transaction.atomic():
-            product = ProductRepository.create(**self.data)
+            product = ProductRepository.create(**data)
             return product
 
-
-class UpdateProductAction:
-
-    def __init__(self, data):
-        self.data = data
-
-    def run(self, instance):
+    def update(self, product: Product, data):
         with transaction.atomic():
-            product = ProductRepository.update(instance, **self.data)
-            return product
+            instance = ProductRepository.update(product, **data)
+            return instance
+
+    def assign_to_warehouse(self, product: Product, warehouse: Warehouse):
+        # Проверяем, что фотографии уже загружены
+        if not product.pictures.exists():
+            raise ValidationError("Сначала необходимо загрузить фотографии")
+
+        # Привязываем продукт к складу
+        stock = StockAction().process_ingoing(product, warehouse, 1)
+
+        # Меняем статус на "в наличии"
+        product.status = StatusChoices.IN_STOCK.value
+        self.save_product(product)
+
+        return stock
+
+    @staticmethod
+    def save_product(product: Product):
+        """
+        Сохраняет продукт и проверяет возможность изменения статуса.
+
+        :param product: Продукт для сохранения.
+        :raises ValidationError: Если статус изменен неправильно.
+        """
+
+        if product:  # Если продукт уже существует
+            original = Product.objects.get(pk=product.pk)
+            if original.status == StatusChoices.IN_STOCK.value and product.status != StatusChoices.IN_STOCK.value:
+                raise ValidationError("Нельзя изменить статус обратно после установки 'в наличии'")
+
+        product.save()
 
 
 class ImportProductAction:
@@ -107,33 +127,10 @@ class ImportProductAction:
                 product=product,
                 cost=0 if product_data.get('price') is None else product_data.get('price'),
             )
+            modification_attr = ModificationDraft.objects.get(product_id=product.id)
+            update_eav_attr(modification_attr)
 
             self.save_image(product_data, product)
 
         except utils.IntegrityError as exc:
             print(exc)
-
-    # @staticmethod
-    # def get_modification_id(modification_data: dict) -> Modification:
-    #
-    #     modification_id = modification_data['id']
-    #
-    #     # Попробуем сначала получить объект из кэша
-    #     cache_key = f"modification_{modification_id}"
-    #     modification = cache.get(cache_key)
-    #
-    #     if modification is None:
-    #         try:
-    #             # Если объект не найден в кэше, получаем его из базы данных
-    #             modification = Modification.objects.get(id=modification_id).id
-    #             # Сохраняем объект в кэше
-    #             cache.set(cache_key, modification, timeout=3600)  # timeout - время хранения в кэше, в секундах
-    #         except Modification.DoesNotExist:
-    #             # Если объекта нет в базе данных, выполняем импорт
-    #             ImportModification().run(modification_data['modelId'])
-    #             # Попробуем снова получить объект из базы данных
-    #             modification = Modification.objects.get(id=modification_id).id
-    #             # Сохраняем объект в кэше
-    #             cache.set(cache_key, modification.id, timeout=3600)  # timeout - время хранения в кэше, в секундах
-    #
-    #     return modification
