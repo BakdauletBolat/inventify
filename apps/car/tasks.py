@@ -47,8 +47,8 @@ def create_modifications_draft():
 
 @shared_task
 def import_car_data_recar():
-    # create_modifications_draft()
-    # create_products_draft()
+    create_modifications_draft()
+    create_products_draft()
     create_products()
 
 
