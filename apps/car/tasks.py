@@ -52,7 +52,7 @@ def import_car_data_recar():
     create_products()
 
 
-
+@shared_task
 def update_eav_attr(modification_attr: ModificationDraft):
     modification = modification_attr.data.get('modification') if modification_attr.data.get(
         'modification') is not None else {}
