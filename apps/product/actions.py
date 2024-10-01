@@ -128,7 +128,7 @@ class ImportProductAction:
                 cost=0 if product_data.get('price') is None else product_data.get('price'),
             )
             modification_attr = ModificationDraft.objects.get(product_id=product.id)
-            update_eav_attr(modification_attr)
+            update_eav_attr(modification_attr, product.id)
 
             self.save_image(product_data, product)
 
