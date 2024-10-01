@@ -1,5 +1,6 @@
 from rest_framework import serializers
 
+from apps.category.models import Category
 from apps.category.serializers import CategorySerializer
 from apps.product import serializers as product_serializers
 from apps.product.enums import StatusChoices
@@ -16,14 +17,27 @@ class QualitySerializer(serializers.ModelSerializer):
 
 class WareHouseSerializer(serializers.ModelSerializer):
     category_ids = serializers.ListField(child=serializers.IntegerField(), write_only=True, required=False,
-                                         source='products_category')
+                                         source='products_category', allow_null=True, allow_empty=True, default=[])
     categories = CategorySerializer(many=True, source='products_category', read_only=True)
     city = CitySerializer(read_only=True)
-    city_id = serializers.PrimaryKeyRelatedField(queryset=City.objects.all(), write_only=True)
+    city_id = serializers.PrimaryKeyRelatedField(queryset=City.objects.all(), write_only=True, source='city')
 
     class Meta:
         model = models.Warehouse
         fields = ('id', 'name', 'categories', 'category_ids', 'city', 'city_id')
+
+    def create(self, validated_data):
+        category_ids = validated_data.pop('products_category', [])
+
+        # Создаем объект склада без категории
+        warehouse = models.Warehouse.objects.create(**validated_data)
+
+        # Если указаны категории, добавляем их к складу
+        if category_ids:
+            categories = Category.objects.filter(id__in=category_ids)
+            warehouse.products_category.set(categories)
+
+        return warehouse
 
 
 class StockReceiptSerializer(serializers.ModelSerializer):
