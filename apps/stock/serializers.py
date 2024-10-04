@@ -24,7 +24,7 @@ class WareHouseSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = models.Warehouse
-        fields = ('id', 'name', 'categories', 'category_ids', 'city', 'city_id')
+        fields = ('id', 'name', 'categories', 'category_ids', 'city', 'city_id', 'min_stock_level')
 
     def create(self, validated_data):
         category_ids = validated_data.pop('products_category', [])
@@ -93,9 +93,9 @@ class MoveProductSerializer(serializers.Serializer):
                 f"Превышение максимального лимита склада. Максимально допустимое количество: {dest_warehouse.min_stock_level}"
             )
 
-        if product.category not in categories:
-            raise serializers.ValidationError(
-                f"Продукт категории '{product.category}' не может быть размещен на этом складе."
-            )
+        # if product.category not in categories:
+        #     raise serializers.ValidationError(
+        #         f"Продукт категории '{product.category}' не может быть размещен на этом складе."
+        #     )
 
         return attrs

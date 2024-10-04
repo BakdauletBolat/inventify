@@ -204,7 +204,7 @@ class RecarRequest(Request):
                 "size": size,
                 "sort": {
                     "column": "parts_count",
-                    "order": "desc"
+                    "order": "asc"
                 },
                 "showId": False,
                 "showName": True,
@@ -216,7 +216,7 @@ class RecarRequest(Request):
                 "showGroupedSalesCount": False,
                 "showBarcode": False
             },
-            "query": "query fetchLocations($payload: GetLocationsInput, $size: Int, $page: Int, $sort: LocationSort, $showDepartment: Boolean!, $showName: Boolean!, $showType: Boolean!, $showPartCategories: Boolean!, $showPartsCount: Boolean!, $showReservedPartsCount: Boolean!, $showGroupedSalesCount: Boolean!) {\n  locations(payload: $payload, size: $size, page: $page, sort: $sort) {\n    nodes {\n      id\n      groupedSalesCount @include(if: $showGroupedSalesCount)\n      name @include(if: $showName)\n      department @include(if: $showDepartment) {\n        id\n        name\n        __typename\n      }\n      partCategories @include(if: $showPartCategories) {\n        id\n        name\n        __typename\n      }\n      partsCount @include(if: $showPartsCount)\n      reservedPartsCount @include(if: $showReservedPartsCount)\n      partsSpace @include(if: $showPartsCount)\n      type @include(if: $showType)\n      __typename\n    }\n    __typename\n  }\n}\n"
+            "query": "query fetchLocations($payload: GetLocationsInput, $size: Int, $page: Int, $showDepartment: Boolean!, $showName: Boolean!, $showType: Boolean!, $showPartCategories: Boolean!, $showPartsCount: Boolean!, $showReservedPartsCount: Boolean!, $showGroupedSalesCount: Boolean!) {\n  locations(payload: $payload, size: $size, page: $page) {\n    nodes {\n      id\n      groupedSalesCount @include(if: $showGroupedSalesCount)\n      name @include(if: $showName)\n      department @include(if: $showDepartment) {\n        id\n        name\n        __typename\n      }\n      partCategories @include(if: $showPartCategories) {\n        id\n        name\n        __typename\n      }\n      partsCount @include(if: $showPartsCount)\n      reservedPartsCount @include(if: $showReservedPartsCount)\n      partsSpace @include(if: $showPartsCount)\n      type @include(if: $showType)\n      __typename\n    }\n    __typename\n  }\n}\n"
         }
         response = self.post(data)
         return response['data']['locations']['nodes']

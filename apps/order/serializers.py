@@ -15,10 +15,10 @@ class OrderItemSerializer(serializers.ModelSerializer):
                                                     source='product',
                                                     write_only=True)
     product = ProductSerializer(read_only=True)
-    quality_id = serializers.PrimaryKeyRelatedField(required=True,
-                                                    queryset=Quality.objects.all(),
-                                                    source='quality',
-                                                    write_only=True)
+    # quality_id = serializers.PrimaryKeyRelatedField(required=True,
+    #                                                 queryset=Quality.objects.all(),
+    #                                                 source='quality',
+    #                                                 write_only=True)
     quality = QualitySerializer(read_only=True)
     quantity = serializers.IntegerField(required=True)
 
@@ -50,7 +50,7 @@ class OrderSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         goods = validated_data.pop('goods', None)
-        total = list(map(lambda x: x['product'].price.last().cost * x['quantity'], goods))
+        total = list(map(lambda x: getattr(x['product'].price.last(), 'cost', 0) * x['quantity'], goods))
         validated_data['total'] = sum(total)
         order = models.Order.objects.create(**validated_data)
 

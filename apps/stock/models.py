@@ -63,7 +63,7 @@ class StockMovement(base_models.BaseModel):
 
     def __str__(self):
         if self.movement_type == MovementEnum.IN:
-            movement = 'поступление на согисклад'
+            movement = 'поступление на склада'
         else:
             movement = 'отгрузка со склада'
         return f"{self.quantity} единиц продукта {self.product.name} {movement} {self.warehouse.name} - {self.created_at}"
