@@ -74,7 +74,8 @@ def update_eav_attr(modification_attr: dict, product_id: int):
 
         try:
             product.eav.modelCar = ModelCar.objects.get(id=modification_attr['model']['id'])
-        except Exception as e:
+        except ModelCar.DoesNotExist as e:
+            import_model_car(modification_attr['manufacturer']['id'])
             ImportModification().run(modification_attr['model']['id'])
             product.eav.modelCar = ModelCar.objects.get(id=modification_attr['model']['id'])
 
