@@ -194,3 +194,39 @@ CACHES = {
 
 EAV2_PRIMARY_KEY_FIELD = "django.db.models.BigAutoField"  # as example
 CELERY_BEAT_SCHEDULER = 'django_celery_beat.schedulers:DatabaseScheduler'
+
+LOG_DIR = os.path.join(BASE_DIR, 'logs')
+
+# Если директория логов не существует, создаём её
+if not os.path.exists(LOG_DIR):
+    os.makedirs(LOG_DIR)
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'verbose': {
+            'format': '{levelname} {asctime} {module} {message}',
+            'style': '{',
+        },
+        'simple': {
+            'format': '{levelname} {message}',
+            'style': '{',
+        },
+    },
+    'handlers': {
+        'file': {
+            'level': 'ERROR',  # Записываем только ошибки
+            'class': 'logging.FileHandler',
+            'filename': os.path.join(BASE_DIR, 'logs', 'errors.log'),  # Путь к файлу логов
+            'formatter': 'verbose',  # Используем verbose-форматтер
+        },
+    },
+    'loggers': {
+        'django': {
+            'handlers': ['file'],
+            'level': 'ERROR',  # Логируем ошибки уровня ERROR и выше
+            'propagate': True,
+        },
+    },
+}

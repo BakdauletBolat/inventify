@@ -1,3 +1,4 @@
+import logging
 from io import BytesIO
 
 import requests
@@ -13,7 +14,9 @@ from apps.product.models.Price import Price
 from apps.product.models.Product import ProductDetail, ProductImage, Product
 from apps.product.repository import ProductRepository
 from apps.stock.actions import StockAction
-from apps.stock.models import Stock, Warehouse
+from apps.stock.models import Warehouse
+
+logger = logging.getLogger('django')
 
 
 class ProductAction:
@@ -123,7 +126,10 @@ class ImportProductAction:
             modification_attr = ModificationDraft.objects.get(product_id=product.id)
             update_eav_attr(modification_attr.data, product.id)
 
-            self.save_image(product_data, product)
+            try:
+                self.save_image(product_data, product)
+            except Exception as e:
+                logger.error(e.args + 'product_id: ' + product.id)
 
         except utils.IntegrityError as exc:
             print(exc)

@@ -144,4 +144,5 @@ class ImportWarehouseAction:
                 quality_id=1
             ))
 
-        Stock.objects.bulk_create(stocks)
+        Stock.objects.bulk_create(stocks,
+                                  ignore_conflicts=True)
