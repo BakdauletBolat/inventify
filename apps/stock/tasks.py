@@ -32,5 +32,5 @@ def import_warehouse():
 @shared_task
 def import_warehouses_from_recar():
     import_warehouse.delay()
-    time.sleep(600)
+    time.sleep(300)
     import_warehouse_detail.delay()
