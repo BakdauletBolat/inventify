@@ -15,7 +15,6 @@ class ProductEAVSerializer(serializers.Serializer):
 
         # Создаем словарь для хранения значений атрибутов
         result = {}
-        update_eav_attr(ModificationDraft.objects.get(product_id=instance.id).data, instance.id)
 
         for value_obj in instance.eav_values.all().annotate(attr_name=F('attribute__name'),
                                                             attr_type=F('attribute__datatype')):

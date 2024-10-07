@@ -64,13 +64,13 @@ def update_eav_attr(modification_attr: dict, product_id: int):
 
     product.mileage = modification_attr['mileage']
     try:
-        # product.eav.bodytype = modification_attr['bodyType']
-        # product.eav.fueltype = modification_attr['fuelType']
-        # product.eav.geartype = modification_attr['gearType']
-        # product.eav.drivetype = modification_attr['driveType']
-        # product.eav.steeringtype = modification_attr['steeringType']
-        # product.eav.axleconfiguration = modification_attr['axleConfiguration']
-        product.eav.enginedisplacement = float(modification_attr['engineDisplacement'])
+        product.eav.bodytype = modification_attr['bodyType']
+        product.eav.fueltype = modification_attr['fuelType']
+        product.eav.geartype = modification_attr['gearType']
+        product.eav.drivetype = modification_attr['driveType']
+        product.eav.steeringtype = modification_attr['steeringType']
+        product.eav.axleconfiguration = modification_attr['axleConfiguration']
+        # product.eav.enginedisplacement = float(modification_attr['engineDisplacement'])
 
         try:
             product.eav.modelCar = ModelCar.objects.get(id=modification_attr['model']['id'])
@@ -78,16 +78,18 @@ def update_eav_attr(modification_attr: dict, product_id: int):
             ImportModification().run(modification_attr['model']['id'])
             product.eav.modelCar = ModelCar.objects.get(id=modification_attr['model']['id'])
 
-        # product.eav.power = modification.get('power', None)
-        # product.eav.capacity = modification.get('capacity', None)
-        # product.eav.numberofcycle = modification.get('numOfCyl', None)
-        # product.eav.numberofvalves = modification.get('numOfValves', None)
-        # product.modification_id = modification.get('id', None)
+        product.eav.power = modification.get('power', None)
+        product.eav.capacity = modification.get('capacity', None)
+        product.eav.numberofcycle = modification.get('numOfCyl', None)
+        product.eav.numberofvalves = modification.get('numOfValves', None)
+        product.modification_id = modification.get('id', None)
         product.save()
     except ValidationError as e:
         product.eav.bodytype = modification_attr['bodyType'].replace('C', 'С')
         product.save()
     except Exception as e:
-        setattr(product.eav, 'engineDisplacement', modification_attr['engineDisplacement'])
-        # product.eav.enginedisplacement = float(modification_attr['engineDisplacement'])
-        product.save()
+        pass
+        # setattr(product.eav, 'engineDisplacement', modification_attr['engineDisplacement'])
+        # # product.eav.enginedisplacement = float(modification_attr['engineDisplacement'])
+        # product.save()
+
