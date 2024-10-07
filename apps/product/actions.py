@@ -129,7 +129,7 @@ class ImportProductAction:
             try:
                 self.save_image(product_data, product)
             except Exception as e:
-                logger.error(e.args + 'product_id: ' + product.id)
+                logger.error(f"Ошибка загрузки фото продукта {product.id}")
 
         except utils.IntegrityError as exc:
             print(exc)
