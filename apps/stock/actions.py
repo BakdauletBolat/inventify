@@ -136,7 +136,6 @@ class ImportWarehouseAction:
     def import_detail(self, locationId):
         products = RecarRequest().get_warehouse_detail(locationId)
         stocks = []
-        Stock.objects.all().delete()
         for product in products:
             stocks.append(Stock(
                 warehouse_id=locationId,
@@ -144,4 +143,5 @@ class ImportWarehouseAction:
                 quantity=1,
                 quality_id=1
             ))
+
         Stock.objects.bulk_create(stocks)

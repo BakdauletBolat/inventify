@@ -1,14 +1,18 @@
+from django_filters.rest_framework import DjangoFilterBackend
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework import viewsets, status
 from rest_framework.response import Response
 
 from apps.stock import models, serializers
 from apps.stock.actions import StockAction
+from apps.stock.filters import WarehouseFilter
 
 
 class WareHouseViewSet(viewsets.ModelViewSet):
     queryset = models.Warehouse.objects.all()
     serializer_class = serializers.WareHouseSerializer
+    filter_backends = [DjangoFilterBackend]
+    filterset_class = WarehouseFilter
 
     def retrieve(self, request, *args, **kwargs):
         instance = self.get_object()

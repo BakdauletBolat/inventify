@@ -108,13 +108,6 @@ class ImportProductAction:
                 status=StatusChoicesRecar.__getitem__(name=product_data['status']),
             )
 
-            Stock.objects.create(
-                product=product,
-                warehouse_id=None if product_data.get('location') is None else product_data.get('location')['id'],
-                quality_id=1,
-                quantity=1
-            )
-
             ProductDetail.objects.create(
                 height=product_data['height'],
                 width=product_data['width'],

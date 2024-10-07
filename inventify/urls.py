@@ -14,7 +14,8 @@ urlpatterns = yasg_urlpatterns + [
         path('car/', include('apps.car.urls')),
         path('category/', include('apps.category.urls')),
         path('stock/', include('apps.stock.urls')),
-        path('orders/', include('apps.order.urls'))
+        path('orders/', include('apps.order.urls')),
+        path('handbook/', include('handbook.urls')),
     ])),
 ]
 urlpatterns += yasg_urlpatterns

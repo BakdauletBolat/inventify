@@ -118,6 +118,11 @@ class ProductViewSetV2(ModelViewSet):
         serializer = list_serializer(queryset, many=True, context={"request": request})
         return Response(serializer.data)
 
+    @swagger_auto_schema(responses={200: serializers.ProductListSerializerV2,},
+                         request_body=deserializer_class,
+                         operation_id='Обновить',
+                         tags=['Запчасть V2'],
+                         )
     def update(self, request, *args, **kwargs):
         serializer = self.deserializer_class(data=request.data)
         serializer.is_valid(raise_exception=True)

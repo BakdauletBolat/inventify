@@ -1,4 +1,3 @@
-from eav.models import Attribute
 from rest_framework import serializers
 
 from apps.car.serializers import OemCodesCreateIfNotExistField
@@ -6,8 +5,6 @@ from apps.product.eav_serializer import ProductEAVSerializer
 from apps.product.models import Product
 from apps.product.models.Product import ProductImage
 from apps.product.serializers import ProductDetailSerializer
-
-
 
 
 class ProductImageDeSerializer(serializers.ModelSerializer):
@@ -29,13 +26,13 @@ class ProductDeSerializer(serializers.ModelSerializer):
 
 
 class ProductDeSerializerV2(serializers.ModelSerializer):
-    detail = ProductDetailSerializer()
+    detail = ProductDetailSerializer(required=False, allow_null=True)
     status = serializers.CharField(read_only=True)
     price = serializers.IntegerField(required=False, allow_null=True)
     code = OemCodesCreateIfNotExistField(required=False, allow_null=True)
-    eav_attributes = ProductEAVSerializer()
+    eav_attributes = ProductEAVSerializer(required=False, allow_null=True)
 
     class Meta:
         model = Product
-        exclude = ('modification', )
-        read_only_fields = ['pictures', 'market_price',]
+        exclude = ('modification',)
+        read_only_fields = ['pictures', 'market_price', 'name', ]

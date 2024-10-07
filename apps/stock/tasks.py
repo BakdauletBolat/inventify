@@ -3,15 +3,16 @@ import time
 from celery import shared_task
 
 from apps.stock.actions import ImportWarehouseAction
+from apps.stock.models import Stock
 from base.requests import RecarRequest
 
 
 @shared_task
 def import_warehouse_detail():
     page = 1
-    size = 70
-
-    for pageNumber in range(page, 80, 1):
+    size = 50
+    Stock.objects.all().delete()
+    for pageNumber in range(page, 110, 1):
         warehouses = RecarRequest().get_warehouses(pageNumber, size)
         for warehouse in warehouses:
             ImportWarehouseAction().import_detail(warehouse['id'])
@@ -19,10 +20,10 @@ def import_warehouse_detail():
 
 @shared_task
 def import_warehouse():
-    page = 1
     size = 50
+    page = 1
 
-    for pageNumber in range(1, 100, 1):
+    for pageNumber in range(page, 110, 1):
         warehouses = RecarRequest().get_warehouses(pageNumber, size)
         for warehouse in warehouses:
             ImportWarehouseAction().run(warehouse)

@@ -3,8 +3,10 @@ from drf_yasg.utils import swagger_auto_schema
 from eav.models import Attribute
 from rest_framework import serializers
 
+from apps.car.models import ModificationDraft
 from apps.car.models.Model import ModelCar
 from apps.car.serializers import ModelCarSerializer
+from apps.car.tasks import update_eav_attr
 
 
 class ProductEAVSerializer(serializers.Serializer):
@@ -13,6 +15,7 @@ class ProductEAVSerializer(serializers.Serializer):
 
         # Создаем словарь для хранения значений атрибутов
         result = {}
+        update_eav_attr(ModificationDraft.objects.get(product_id=instance.id).data, instance.id)
 
         for value_obj in instance.eav_values.all().annotate(attr_name=F('attribute__name'),
                                                             attr_type=F('attribute__datatype')):

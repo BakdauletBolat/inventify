@@ -14,12 +14,12 @@ app.autodiscover_tasks()
 app.conf.beat_schedule = {
     'Обновление продуктов и их модификаций': {
         'task': 'apps.car.tasks.import_car_data_recar',
-        'schedule': crontab(hour=1, minute=00)
+        'schedule': crontab(hour=00, minute=00)
     },
 
     'Обновление складов': {
         'task': 'apps.stock.tasks.import_warehouses_from_recar',
-        'schedule': crontab(hour=00, minute=00)
+        'schedule': crontab(hour=1, minute=00)
     }
 }
 

@@ -60,5 +60,6 @@ class ProductRepository(BaseRepository):
             Price.objects.get_or_create(product=instance, cost=price)
 
         super().update(instance, **kwargs)
-        instance.code.set(codes)
+        if len(codes):
+            instance.code.set(codes)
         return instance

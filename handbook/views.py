@@ -1,3 +1,13 @@
-from django.shortcuts import render
+from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework.viewsets import ModelViewSet
 
-# Create your views here.
+from handbook.filters import CityFilterSet
+from handbook.models import City
+from handbook.serializers import CitySerializer
+
+
+class CityViewSet(ModelViewSet):
+    queryset = City.objects.all()
+    serializer_class = CitySerializer
+    filter_backends = [DjangoFilterBackend]
+    filterset_class = CityFilterSet
