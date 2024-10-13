@@ -48,8 +48,9 @@ class ProductSerializer(serializers.ModelSerializer):
     @staticmethod
     def get_warehouse(obj: Product):
         from apps.stock.serializers import WareHouseSerializer
-        if obj.stock.exists():
-            return WareHouseSerializer(obj.stock.filter(quantity__gt=0).first().warehouse).data
+        stock = obj.stock.filter(quantity__gt=0).first()
+        if stock:
+            return WareHouseSerializer(stock.warehouse).data
         return None
 
     class Meta:
@@ -73,7 +74,16 @@ class ProductListSerializerV2(ProductSerializer):
     modelCar = serializers.SerializerMethodField('get_modelCar')
 
     class Meta(ProductSerializer.Meta):
-        fields = ('id', 'name', 'category', 'pictures', 'modelCar', 'status', 'price', 'created_at')
+        fields = ('id',
+                  'name',
+                  'category',
+                  'pictures',
+                  'modelCar',
+                  'status',
+                  'price',
+                  'created_at',
+                  'warehouse'
+                  )
 
     def get_pictures(self, obj: Product):
         return ProductImageSerializer(obj.pictures.all(), many=True, context=self.context).data

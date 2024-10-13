@@ -4,6 +4,7 @@ from rest_framework.exceptions import ValidationError, APIException
 from apps.product.models import Product
 from apps.product.models.Price import Price
 from apps.product.models.Product import ProductDetail
+from apps.stock.actions import StockAction
 from base.repository import BaseRepository
 
 
@@ -42,6 +43,7 @@ class ProductRepository(BaseRepository):
         details_data = kwargs.pop('detail', {})
         codes = kwargs.pop('code', [])
         eav_data = kwargs.pop('eav_attributes', {})
+        dest_warehouse = kwargs.pop('warehouse')
         ProductDetail.objects.update_or_create(product=instance,
                                                defaults={**details_data},
                                                )
@@ -58,6 +60,13 @@ class ProductRepository(BaseRepository):
 
         if price is not None:
             Price.objects.get_or_create(product=instance, cost=price)
+
+        if dest_warehouse:
+            warehouse = getattr(instance.stock.filter(quantity__gt=0).first(), 'warehouse')
+            if warehouse:
+                StockAction().move_product(instance, warehouse, dest_warehouse, 1)
+            else:
+                StockAction().process_ingoing(instance, dest_warehouse)
 
         super().update(instance, **kwargs)
         if len(codes):

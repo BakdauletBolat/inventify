@@ -1,6 +1,7 @@
 import django_filters
 from django.db.models import OuterRef, Exists, Subquery, Q, QuerySet
 from django.db.models.functions.text import Lower
+from django_filters import OrderingFilter
 from eav.models import Attribute, Value
 
 from apps.car.models.Model import ModelCar
@@ -28,6 +29,13 @@ class DynamicProductFilterSet(django_filters.FilterSet):
     price = django_filters.RangeFilter(field_name='price__cost')
     category = django_filters.BaseInFilter(field_name='category__id', lookup_expr='in')
     search = django_filters.CharFilter(method='filter_by_product_or_category_name')
+    sort = OrderingFilter(
+        fields=(
+            ('id', 'id'),
+            ('created_at', 'created_at'),
+            ('status', 'status')
+        )
+    )
 
     class Meta:
         model = Product

@@ -2,7 +2,8 @@ from rest_framework import serializers
 
 from apps.car.models.Model import ModelCar, ManufacturerType
 from apps.car.models.Modification import Modification, Engine
-from apps.car.models.ModificationDetails import OemCodes
+from apps.car.models.ModificationDetails import OemCodes, ColorType
+from apps.stock.models import Quality
 
 
 class ManufacturerTypeSerializer(serializers.ModelSerializer):
@@ -12,6 +13,8 @@ class ManufacturerTypeSerializer(serializers.ModelSerializer):
 
 
 class ModelCarSerializer(serializers.ModelSerializer):
+    manufacturer = ManufacturerTypeSerializer()
+
     class Meta:
         model = ModelCar
         fields = '__all__'
@@ -57,3 +60,14 @@ class OemCodesCreateIfNotExistField(serializers.ListSerializer):
                 oem_codes.append(oem_code)
         return oem_codes
 
+
+class ColorTypeSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ColorType
+        fields = '__all__'
+
+
+class QualityTypeSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Quality
+        fields = '__all__'
