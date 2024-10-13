@@ -78,8 +78,8 @@ class ProductImageView(BaseAPIView):
 class ProductViewSetV2(ModelViewSet):
     deserializer_class = deserializers.ProductDeSerializerV2
     serializer_class = serializers.ProductSerializerV2
-    queryset = Product.objects.prefetch_related('price', 'pictures').select_related(
-        'category', ).all()
+    queryset = Product.objects.prefetch_related('price', 'pictures',).select_related(
+        'category',).all().order_by('-created_at')
     filter_backends = [DjangoFilterBackend]
     filterset_class = DynamicProductFilterSet
 
@@ -100,12 +100,8 @@ class ProductViewSetV2(ModelViewSet):
                          )
     def list(self, request, *args, **kwargs):
         queryset = self.filter_queryset(
-            self.get_queryset().select_related(
-                ).prefetch_related(
-                'price',
-                Prefetch('modification'),
-                Prefetch('pictures'),
-            ))
+            self.get_queryset()
+            )
         latest_price = Price.objects.filter(product=OuterRef('pk')).order_by('-created_at')
         queryset = queryset.annotate(latest_price=Subquery(latest_price.values('cost')[:1]))
         list_serializer = serializers.ProductListSerializerV2
