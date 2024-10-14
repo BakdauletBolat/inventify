@@ -20,6 +20,21 @@ app.conf.beat_schedule = {
     'Обновление складов': {
         'task': 'apps.stock.tasks.import_warehouses_from_recar',
         'schedule': crontab(hour=1, minute=00)
+    },
+
+    'Импорт моделей машины': {
+        'task': 'apps.stock.tasks.create_car_models',
+        'schedule': crontab(day_of_week=0, hour=0, minute=0),
+    },
+
+    'Импорт модификаций': {
+        'task': 'apps.stock.tasks.import_modification_recar',
+        'schedule': crontab(day_of_week=0, hour=1, minute=0),
+    },
+
+    'Обновление статуса продуктов': {
+        'task': 'apps.product.tasks.update_status_products',
+        'schedule': crontab(hour=00, minute=30)
     }
 }
 

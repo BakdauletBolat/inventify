@@ -230,7 +230,7 @@ class RecarRequest(Request):
                     "locationId": locationId
                 },
                 "page": 1,
-                "size": "100"
+                "size": "300"
             },
             "query": "query FetchLocationParts($payload: GetPartsInput, $page: Int, $size: Int) {\n  parts(payload: $payload, page: $page, size: $size) {\n    nodes {\n      id\n            location {\n        id\n        name\n        departmentId\n        __typename\n      }\n      oemCodes {\n        id\n        code\n        __typename\n      }\n            quantity\n      __typename\n    }\n    __typename\n  }\n}\n"
         }

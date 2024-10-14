@@ -6,6 +6,7 @@ from rest_framework.response import Response
 from apps.stock import models, serializers
 from apps.stock.actions import StockAction
 from apps.stock.filters import WarehouseFilter
+from base.paginations import CustomPageNumberPagination
 
 
 class WareHouseViewSet(viewsets.ModelViewSet):
@@ -13,6 +14,7 @@ class WareHouseViewSet(viewsets.ModelViewSet):
     serializer_class = serializers.WareHouseSerializer
     filter_backends = [DjangoFilterBackend]
     filterset_class = WarehouseFilter
+    pagination_class = CustomPageNumberPagination
 
     def retrieve(self, request, *args, **kwargs):
         instance = self.get_object()

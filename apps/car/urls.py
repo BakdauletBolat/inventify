@@ -9,7 +9,8 @@ router.register('quality', views.QualityModelViewSet)
 
 
 urlpatterns = [
-    path('modifications/', views.ProductModificationListAPIView.as_view()),
+    path('modifications/', views.ProductModificationListAPIView.as_view({'get': 'list'})),
+    path('modifications/<int:pk>/', views.ProductModificationListAPIView.as_view({'get': 'retrieve'})),
     path('manufacturers/', views.ManufacturerListAPIView.as_view({'get': 'list'})),
     path('<int:pk>/manufacturers/', views.ManufacturerListAPIView.as_view({'get': 'retrieve'})),
     path('models/', views.CarModelsListAPIView.as_view()),

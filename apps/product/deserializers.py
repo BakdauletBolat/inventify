@@ -33,7 +33,7 @@ class ProductDeSerializerV2(serializers.ModelSerializer):
     code = OemCodesCreateIfNotExistField(required=False, allow_null=True)
     eav_attributes = ProductEAVSerializer(required=False, allow_null=True)
     name = serializers.CharField(required=False, allow_null=True, allow_blank=True)
-    warehouse_id = serializers.PrimaryKeyRelatedField(queryset=Warehouse.objects.all(), source='warehouse')
+    warehouse_id = serializers.PrimaryKeyRelatedField(required=False, queryset=Warehouse.objects.all(), source='warehouse')
 
     class Meta:
         model = Product

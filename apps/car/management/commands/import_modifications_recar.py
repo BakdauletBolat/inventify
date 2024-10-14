@@ -1,9 +1,6 @@
 from django.core.management import BaseCommand
 
-from apps.product.enums import StatusChoices
-from apps.product.models.Product import Product
-from apps.product.tasks import update_status_products
-from base.requests import RecarRequest
+from apps.car.tasks import import_modification_recar
 
 
 class Command(BaseCommand):
@@ -11,8 +8,5 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         self.stdout.write('seeding data...')
-        update_status_products()
+        import_modification_recar.delay()
         self.stdout.write('done.')
-
-
-

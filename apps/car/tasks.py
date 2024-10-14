@@ -2,11 +2,23 @@ from celery import shared_task
 from django.core.exceptions import ValidationError
 
 from apps.car.actions.ImportModifcation import ImportModification
-from apps.car.models.Model import ModelCar
+from apps.car.models.Model import ModelCar, ManufacturerType
 from apps.car.models.ModificationDraft import ModificationDraft
 from apps.product.models.Product import Product
 from apps.product.tasks import create_products_draft, create_products
 from base.requests import RecarRequest
+
+
+@shared_task
+def import_modification(car_model_id: int):
+    ImportModification().run(car_model_id)
+
+
+@shared_task
+def import_modification_recar():
+    car_models = ModelCar.objects.values_list('id', flat=True)
+    for car_model_id in car_models:
+        import_modification.delay(car_model_id)
 
 
 @shared_task
@@ -94,3 +106,24 @@ def update_eav_attr(modification_attr: dict, product_id: int):
         # # product.eav.enginedisplacement = float(modification_attr['engineDisplacement'])
         # product.save()
 
+
+@shared_task
+def create_car_models():
+    bulk_create_options = {
+        "update_conflicts": True,
+        "unique_fields": ['id'],
+        "update_fields": ['name']
+    }
+    recar_request = RecarRequest()
+    modification_params = recar_request.get_modification_params()
+    manufacturers = []
+
+    for manufacturer in modification_params['manufacturers']['nodes']:
+        manufacturers.append(ManufacturerType(id=manufacturer['id'],
+                                              name=manufacturer['title']))
+
+    ManufacturerType.objects.bulk_create(manufacturers, **bulk_create_options)
+
+    manufacturers = ManufacturerType.objects.values_list('id', flat=True)
+    for manufacturer_id in manufacturers:
+        import_model_car.apply(manufacturer_id)

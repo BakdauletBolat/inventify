@@ -12,7 +12,7 @@ from apps.stock.models import Quality
 
 
 # Create your views here.
-class ProductModificationListAPIView(ListAPIView):
+class ProductModificationListAPIView(GenericViewSet, ListModelMixin, RetrieveModelMixin):
     queryset = Modification.objects.all()
     serializer_class = ModificationSerializer
     filter_backends = [DjangoFilterBackend]

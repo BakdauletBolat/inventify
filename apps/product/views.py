@@ -14,6 +14,7 @@ from apps.product.models.Price import Price
 from apps.product.models.Product import Product, ProductImage
 from apps.product.repository import ProductRepository
 from apps.product.serializers import AssignWarehouseSerializer
+from apps.stock.models import Stock
 from base.paginations import CustomPageNumberPagination
 from base.views import BaseAPIView
 
@@ -62,6 +63,7 @@ class ProductImageView(BaseAPIView):
     deserializer_class = deserializers.ProductImageDeSerializer
     serializer_class = serializers.ProductImageSerializer
     queryset = ProductImage.objects.all()
+    pagination_class = CustomPageNumberPagination
 
     def post(self, request, *args, **kwargs):
         serializer = self.get_deserializer(data=request.data)
@@ -78,7 +80,11 @@ class ProductImageView(BaseAPIView):
 class ProductViewSetV2(ModelViewSet):
     deserializer_class = deserializers.ProductDeSerializerV2
     serializer_class = serializers.ProductSerializerV2
-    queryset = Product.objects.prefetch_related('price', 'pictures',).select_related(
+    queryset = Product.objects.prefetch_related('price', 'pictures', 'eav_values', Prefetch(
+            'stock',
+            queryset=Stock.objects.select_related('warehouse'),
+            to_attr='prefetched_stock'
+        )).select_related(
         'category',).all().order_by('-created_at')
     filter_backends = [DjangoFilterBackend]
     filterset_class = DynamicProductFilterSet
