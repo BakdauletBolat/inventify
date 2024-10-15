@@ -127,7 +127,7 @@ def create_car_models():
 
     manufacturers = ManufacturerType.objects.values_list('id', flat=True)
     for manufacturer_id in manufacturers:
-        import_model_car.apply(manufacturer_id)
+        import_model_car.delay(manufacturer_id)
 
 
 @shared_task
