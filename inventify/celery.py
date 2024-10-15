@@ -23,13 +23,18 @@ app.conf.beat_schedule = {
     },
 
     'Импорт моделей машины': {
-        'task': 'apps.stock.tasks.create_car_models',
+        'task': 'apps.car.tasks.create_car_models',
         'schedule': crontab(day_of_week=0, hour=0, minute=0),
     },
 
     'Импорт модификаций': {
-        'task': 'apps.stock.tasks.import_modification_recar',
+        'task': 'apps.car.tasks.import_modification_recar',
         'schedule': crontab(day_of_week=0, hour=1, minute=0),
+    },
+
+    'Импорт двигателей': {
+        'task': 'apps.car.tasks.create_engines',
+        'schedule': crontab(day_of_week=0, hour=2, minute=0),
     },
 
     'Обновление статуса продуктов': {

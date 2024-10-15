@@ -24,9 +24,11 @@ class ProductRepository(BaseRepository):
 
         product_detail['product'] = product
         for attr_name, value in eav_data.items():
-
-            attribute = Attribute.objects.get(name=attr_name)
-            setattr(product.eav, attribute.slug, value)
+            try:
+                attribute = Attribute.objects.get(name=attr_name)
+                setattr(product.eav, attribute.slug, value)
+            except Attribute.DoesNotExist:
+                pass
 
         try:
             product.eav.validate_attributes()
@@ -43,15 +45,18 @@ class ProductRepository(BaseRepository):
         details_data = kwargs.pop('detail', {})
         codes = kwargs.pop('code', [])
         eav_data = kwargs.pop('eav_attributes', {})
-        dest_warehouse = kwargs.pop('warehouse')
+        dest_warehouse = kwargs.pop('warehouse', {})
         ProductDetail.objects.update_or_create(product=instance,
                                                defaults={**details_data},
                                                )
 
         for attr_name, value in eav_data.items():
 
-            attribute = Attribute.objects.get(name=attr_name)
-            setattr(instance.eav, attribute.slug, value)
+            try:
+                attribute = Attribute.objects.get(name=attr_name)
+                setattr(instance.eav, attribute.slug, value)
+            except Attribute.DoesNotExist as e:
+                pass
 
         try:
             instance.eav.validate_attributes()

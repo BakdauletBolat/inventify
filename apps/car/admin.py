@@ -4,7 +4,7 @@ from django_json_widget.widgets import JSONEditorWidget
 
 from apps.car.models import ModificationDraft
 from apps.car.models.Model import *
-from apps.car.models.Modification import Modification
+from apps.car.models.Modification import Modification, Engine
 
 
 class ModelCarAdmin(admin.ModelAdmin):
@@ -30,5 +30,6 @@ class ModificationDraftAdmin(admin.ModelAdmin):
 
 admin.site.register(Modification, ModificationAdmin)
 admin.site.register(ModelCar, ModelCarAdmin)
+admin.site.register(Engine)
 admin.site.register(ManufacturerType, ManufacturerTypeAdmin)
 admin.site.register(ModificationDraft, ModificationDraftAdmin)

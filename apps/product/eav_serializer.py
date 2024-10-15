@@ -3,9 +3,9 @@ from drf_yasg.utils import swagger_auto_schema
 from eav.models import Attribute
 from rest_framework import serializers
 
-from apps.car.models import ModificationDraft
+from apps.car.models import ModificationDraft, Engine
 from apps.car.models.Model import ModelCar
-from apps.car.serializers import ModelCarSerializer
+from apps.car.serializers import ModelCarSerializer, EngineSerializer
 from apps.car.tasks import update_eav_attr
 
 
@@ -24,8 +24,10 @@ class ProductEAVSerializer(serializers.Serializer):
 
             if value_obj.attr_type == Attribute.TYPE_OBJECT:
                 if value is not None:
-                    value = ModelCarSerializer(value).data
-                    # value.pop('_state') # если требуется удалить '_state', раскомментируйте эту строку
+                    if value_obj.attr_name == 'engine':
+                        value = EngineSerializer(value).data
+                    elif value_obj.attr_name == 'modelCar':
+                        value = ModelCarSerializer(value).data
             elif value_obj.attr_type == Attribute.TYPE_ENUM:
                 value = getattr(value, 'value', None) if getattr(value, 'value', None) is not None else value
 
@@ -36,14 +38,20 @@ class ProductEAVSerializer(serializers.Serializer):
     def to_internal_value(self, data):
         validated_data = {}
         for attribute_name, value in data.items():
-            attribute = Attribute.objects.get(name=attribute_name)
+            try:
+                attribute = Attribute.objects.get(name=attribute_name)
 
-            # Если атрибут - enum, обрабатываем его по-особенному
-            if attribute.datatype == Attribute.TYPE_OBJECT:
-                instance = ModelCar.objects.get(id=value)
-                validated_data[attribute_name] = instance
-            else:
-                validated_data[attribute_name] = value
+                # Если атрибут - enum, обрабатываем его по-особенному
+                if attribute.datatype == Attribute.TYPE_OBJECT:
+                    if attribute.slug == 'engine':
+                        instance = Engine.objects.get(id=value)
+                    elif attribute.slug == 'modelCar':
+                        instance = ModelCar.objects.get(id=value)
+                    validated_data[attribute_name] = instance
+                else:
+                    validated_data[attribute_name] = value
+            except Attribute.DoesNotExist as e:
+                pass
 
         return validated_data
 

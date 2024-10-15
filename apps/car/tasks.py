@@ -2,6 +2,7 @@ from celery import shared_task
 from django.core.exceptions import ValidationError
 
 from apps.car.actions.ImportModifcation import ImportModification
+from apps.car.models import Modification, Engine
 from apps.car.models.Model import ModelCar, ManufacturerType
 from apps.car.models.ModificationDraft import ModificationDraft
 from apps.product.models.Product import Product
@@ -127,3 +128,26 @@ def create_car_models():
     manufacturers = ManufacturerType.objects.values_list('id', flat=True)
     for manufacturer_id in manufacturers:
         import_model_car.apply(manufacturer_id)
+
+
+@shared_task
+def create_engines():
+    modifications = Modification.objects.values_list('id', flat=True)
+
+    for modification_id in modifications:
+        create_engine.delay(modification_id)
+
+
+@shared_task
+def create_engine(modification_id):
+    recar_request = RecarRequest()
+    engines = []
+    engines_data = recar_request.get_engines(modification_id)
+    for engine in engines_data:
+        engines.append(Engine(id=engine['id'],
+                              name=engine['name'],
+                              modification_id=modification_id))
+    Engine.objects.bulk_create(engines,
+                               ignore_conflicts=True,
+                               unique_fields=['id'],
+                               update_fields=['id', 'modification_id'])

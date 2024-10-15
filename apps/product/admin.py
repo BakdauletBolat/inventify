@@ -10,7 +10,7 @@ from eav.forms import BaseDynamicEntityForm
 from djangoql.admin import DjangoQLSearchMixin
 
 
-from apps.car.models import ModelCar
+from apps.car.models import ModelCar, Engine
 from apps.product.actions import ImportProductAction
 from apps.product.models import ImportProductData
 from apps.product.models.Price import Price
@@ -25,6 +25,13 @@ class ProductAdminForm(BaseDynamicEntityForm):
         widget=AdminURLFieldWidget(attrs={'class': 'vForeignKeyRawIdAdminField'})
     )
 
+    engine = forms.ModelChoiceField(
+        queryset=Engine.objects.all(),
+        required=False,
+        label='Двигатель',
+        widget=AdminURLFieldWidget(attrs={'class': 'vForeignKeyRawIdAdminField'})
+    )
+
     class Meta:
         model = Product
         fields = '__all__'
@@ -34,17 +41,26 @@ class ProductAdminForm(BaseDynamicEntityForm):
         # Убедитесь, что поля корректно настроены для отображения
         if self.instance:
             self.fields['modelCar'].initial = self.instance.eav.modelCar
+            self.fields['engine'].initial = self.instance.eav.engine
             model_car = self.instance.eav.modelCar
+            engine = self.instance.eav.engine
             if model_car:
                 url = reverse('admin:car_modelcar_change', args=[model_car.pk])
                 self.fields['modelCar'].help_text = format_html('<a href="{}">Перейти к модели машины</a>', url)
+
+            if engine:
+                url = reverse('admin:car_modelcar_change', args=[engine.pk])
+                self.fields['engine'].help_text = format_html('<a href="{}">Перейти к двигателю</a>', url)
 
     def clean(self):
         cleaned_data = super().clean()
         # Обработка данных полей EAV при сохранении
         model_car = cleaned_data.get('modelCar')
+        engine = cleaned_data.get('engine')
         if model_car:
             self.instance.eav.modelCar = model_car
+        if engine:
+            self.instance.eav.engine = engine
         return cleaned_data
 
 
