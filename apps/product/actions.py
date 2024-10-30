@@ -33,8 +33,8 @@ class ProductAction:
 
     def assign_to_warehouse(self, product: Product, warehouse: Warehouse):
         # Проверяем, что фотографии уже загружены
-        if not product.pictures.exists():
-            raise ValidationError("Сначала необходимо загрузить фотографии")
+        # if not product.pictures.exists():
+        #     raise ValidationError("Сначала необходимо загрузить фотографии")
 
         # Привязываем продукт к складу
         stock = StockAction().process_ingoing(product, warehouse, 1)
