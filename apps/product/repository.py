@@ -15,9 +15,8 @@ class ProductRepository(BaseRepository):
     def create(cls, **kwargs):
         product_detail = kwargs.pop('detail')
         oem_codes = kwargs.pop('code', [])
-        if kwargs.get('price', None):
-            Price.objects.create(cost=kwargs.pop('price', 0))
         eav_data = kwargs.pop('eav_attributes', {})
+        price = kwargs.pop('price', None)
 
         product = cls.model.objects.create(**kwargs)
         product.code.add(*oem_codes)
@@ -35,6 +34,8 @@ class ProductRepository(BaseRepository):
         except Exception as e:
             raise ValidationError(detail=e.message)
 
+        if price:
+            Price.objects.create(cost=price, product=product)
         product.save()
         ProductDetail.objects.create(**product_detail)
         return product
