@@ -1,3 +1,5 @@
+import time
+
 from celery import shared_task
 from django.core.exceptions import ValidationError
 
@@ -63,7 +65,9 @@ def create_modifications_draft():
 @shared_task
 def import_car_data_recar():
     create_modifications_draft()
+    time.sleep(50)
     create_products_draft()
+    time.sleep(600)
     create_products()
 
 

@@ -33,10 +33,11 @@ class ProductSerializer(serializers.ModelSerializer):
                                           many=True
                                           )
     modification = ModificationSerializer()
-    warehouse = serializers.SerializerMethodField()
     detail = ProductDetailSerializer()
     status = serializers.CharField(source='get_status_display')
     pictures = serializers.SerializerMethodField()
+
+    warehouse = serializers.SerializerMethodField()
 
     @staticmethod
     def get_price(obj):
@@ -48,9 +49,8 @@ class ProductSerializer(serializers.ModelSerializer):
     @staticmethod
     def get_warehouse(obj: Product):
         from apps.stock.serializers import WareHouseSerializer
-        stock = obj.stock.filter(quantity__gt=0).first()
-        if stock:
-            return WareHouseSerializer(stock.warehouse).data
+        if obj.warehouse:
+            return WareHouseSerializer(obj.warehouse).data
         return None
 
     class Meta:

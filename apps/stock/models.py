@@ -3,7 +3,6 @@ from django.db.models import Sum
 
 from apps.category.models import Category
 from apps.product.enums import StatusChoices
-from apps.product.models import Product
 from apps.stock.enums import MovementEnum
 from base import models as base_models
 from handbook.models import City
@@ -38,6 +37,9 @@ class Warehouse(base_models.BaseModel):
     class Meta:
         verbose_name = 'Склад'
         verbose_name_plural = 'Склады'
+
+
+from apps.product.models import Product
 
 
 class Stock(base_models.BaseModel):

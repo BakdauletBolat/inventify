@@ -29,6 +29,10 @@ class StockMovementRepository(BaseRepository):
             quality=quality
         )
 
+        # Меняем расположение после успешного перемещения
+        product.warehouse = warehouse
+        product.save()
+
         # Сохраняем движение
         movement.save()
 

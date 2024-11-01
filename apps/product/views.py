@@ -80,11 +80,7 @@ class ProductImageView(BaseAPIView):
 class ProductViewSetV2(ModelViewSet):
     deserializer_class = deserializers.ProductDeSerializerV2
     serializer_class = serializers.ProductSerializerV2
-    queryset = Product.objects.prefetch_related('price', 'pictures', 'eav_values', Prefetch(
-            'stock',
-            queryset=Stock.objects.select_related('warehouse'),
-            to_attr='prefetched_stock'
-        )).select_related(
+    queryset = Product.objects.prefetch_related('price', 'pictures', 'eav_values').select_related(
         'category',).all().order_by('-created_at')
     filter_backends = [DjangoFilterBackend]
     filterset_class = DynamicProductFilterSet

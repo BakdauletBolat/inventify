@@ -15,6 +15,7 @@ from apps.product.models.Product import ProductDetail, ProductImage, Product
 from apps.product.repository import ProductRepository
 from apps.stock.actions import StockAction
 from apps.stock.models import Warehouse
+from base.requests import RecarRequest
 
 logger = logging.getLogger('django')
 
@@ -35,6 +36,10 @@ class ProductAction:
         # Проверяем, что фотографии уже загружены
         # if not product.pictures.exists():
         #     raise ValidationError("Сначала необходимо загрузить фотографии")
+
+        # Проверяем что у товара нету привязки к складу
+        if product.warehouse:
+            raise ValidationError(f"Товар уже присвоен к складу: {product.warehouse.name}" )
 
         # Привязываем продукт к складу
         stock = StockAction().process_ingoing(product, warehouse, 1)
@@ -65,11 +70,12 @@ class ProductAction:
 class ImportProductAction:
 
     @staticmethod
-    def save_image(product_data, product):
+    def save_image(product):
+        pictures = RecarRequest().get_photos_by_product(product_id=product.id)
         headers = {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.36'
         }
-        for product_image in product_data['inputParent']['picturesV2']:
+        for product_image in pictures:
             image_url = product_image['optimized']
             response = requests.get(image_url, headers=headers)
             image = Image.open(BytesIO(response.content))
@@ -79,7 +85,7 @@ class ImportProductAction:
 
             output_io = BytesIO()
             quality = 70  # Начальная качество
-            max_size = 100 * 1024  # 100 КБ
+            max_size = 250 * 1024  # 100 КБ
 
             while True:
                 output_io.truncate(0)
@@ -127,7 +133,7 @@ class ImportProductAction:
             update_eav_attr(modification_attr.data, product.id)
 
             try:
-                self.save_image(product_data, product)
+                self.save_image(product)
             except Exception as e:
                 logger.error(f"Ошибка загрузки фото продукта {product.id}")
 

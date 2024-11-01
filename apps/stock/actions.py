@@ -136,6 +136,7 @@ class ImportWarehouseAction:
     def import_detail(self, locationId):
         products = RecarRequest().get_warehouse_detail(locationId)
         stocks = []
+        products_to_update = []
         for product in products:
             stocks.append(Stock(
                 warehouse_id=locationId,
@@ -144,5 +145,11 @@ class ImportWarehouseAction:
                 quality_id=1
             ))
 
+            products_to_update.append(Product(
+                id=product['id'],
+                warehouse_id=locationId
+            ))
+
+        Product.objects.bulk_update(products_to_update, ['warehouse_id'])
         Stock.objects.bulk_create(stocks,
                                   ignore_conflicts=True)

@@ -1,6 +1,6 @@
 from django.contrib.contenttypes.fields import GenericRelation
 from django.core.files.storage import default_storage
-from django.db.models.signals import post_save, post_delete, pre_delete
+from django.db.models.signals import post_save, pre_delete
 from django.dispatch import receiver
 from eav.decorators import register_eav
 
@@ -33,6 +33,9 @@ class Product(BaseModel):
                                     blank=True)
 
     histories = GenericRelation(History)
+
+    from apps.stock.models import Warehouse
+    warehouse = models.ForeignKey(Warehouse, on_delete=models.SET_NULL, null=True, blank=True)
 
     def __str__(self):
         return self.name

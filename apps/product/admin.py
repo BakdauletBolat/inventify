@@ -5,10 +5,9 @@ from django.db.models import JSONField
 from django.urls import reverse
 from django.utils.html import format_html
 from django_json_widget.widgets import JSONEditorWidget
+from djangoql.admin import DjangoQLSearchMixin
 from eav.admin import BaseEntityAdmin
 from eav.forms import BaseDynamicEntityForm
-from djangoql.admin import DjangoQLSearchMixin
-
 
 from apps.car.models import ModelCar, Engine
 from apps.product.actions import ImportProductAction
@@ -40,10 +39,11 @@ class ProductAdminForm(BaseDynamicEntityForm):
         super().__init__(*args, **kwargs)
         # Убедитесь, что поля корректно настроены для отображения
         if self.instance:
-            self.fields['modelCar'].initial = self.instance.eav.modelCar
-            self.fields['engine'].initial = self.instance.eav.engine
-            model_car = self.instance.eav.modelCar
-            engine = self.instance.eav.engine
+            model_car = getattr(self.instance.eav, 'modelCar', None)
+            engine = getattr(self.instance.eav, 'engine', None)
+            self.fields['modelCar'].initial = model_car
+            self.fields['engine'].initial = engine
+
             if model_car:
                 url = reverse('admin:car_modelcar_change', args=[model_car.pk])
                 self.fields['modelCar'].help_text = format_html('<a href="{}">Перейти к модели машины</a>', url)
@@ -125,8 +125,13 @@ class ImportProductAdmin(admin.ModelAdmin):
     }
 
 
+class ProductImageAdmin(admin.ModelAdmin):
+    list_display = ('product_id', 'id')
+    raw_id_fields = ('product',)
+
+
 admin.site.register(Price)
 admin.site.register(Product, ProductAdmin)
 admin.site.register(ImportProductData, ImportProductAdmin)
-admin.site.register(ProductImage)
+admin.site.register(ProductImage, ProductImageAdmin)
 admin.site.register(ProductDetail)
