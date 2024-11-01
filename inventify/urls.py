@@ -19,7 +19,7 @@ urlpatterns = yasg_urlpatterns + [
     ])),
 ]
 urlpatterns += yasg_urlpatterns
-urlpatterns += [path('silk/', include('silk.urls', namespace='silk'))]
+# urlpatterns += [path('silk/', include('silk.urls', namespace='silk'))]
 
 if settings.DEBUG:
     urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)

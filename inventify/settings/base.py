@@ -11,7 +11,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent.parent
 SECRET_KEY = os.environ.get('SECRET_KEY')
 
 DEBUG = int(os.environ.get('DEBUG', 1))
-
+x
 ALLOWED_HOSTS = ['*']
 
 DJANGO_APPS = [
@@ -33,7 +33,7 @@ THIRD_PARTY_APPS = [
     'django_celery_results',
     'django_json_widget',
     'eav',
-    'silk',
+    # 'silk',
     'djangoql'
 ]
 
