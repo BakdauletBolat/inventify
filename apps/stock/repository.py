@@ -1,4 +1,5 @@
-from apps.stock.models import Stock, StockMovement
+from apps.product.models import Product
+from apps.stock.models import Stock, StockMovement, Warehouse
 from base.repository import BaseRepository
 
 
@@ -30,10 +31,14 @@ class StockMovementRepository(BaseRepository):
         )
 
         # Меняем расположение после успешного перемещения
-        product.warehouse = warehouse
-        product.save()
 
+        self.move_to_warehouse(product, warehouse)
         # Сохраняем движение
         movement.save()
 
         return movement
+
+    def move_to_warehouse(self, product: Product, warehouse: Warehouse):
+        product.warehouse = warehouse
+        product.save()
+        product.components.update(warehouse_id=warehouse.id)

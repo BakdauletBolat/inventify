@@ -18,8 +18,8 @@ class Request:
             "operationName": "ObtainTokens",
             "variables": {
                 "payload": {
-                    "email": "abdipatahovas@gmail.com",
-                    "password": "S123456sev$"
+                    "email": "nika_8886@mail.ru",
+                    "password": "Kaynar_2024!"
                 }
             },
             "query": "mutation ObtainTokens($payload: ObtainTokensInput!) {\n  obtainTokens(payload: $payload) {\n    tokens {\n      ...Tokens\n      __typename\n    }\n    user {\n      id\n      admin\n      email\n      firstname\n      lastname\n      picture {\n        id\n        url\n        __typename\n      }\n      phoneNumber\n      selectedDepartmentId\n      selectedCompanyId\n      selectedVehicleType\n      selectedCartId\n      verified\n      selectedDepartment {\n        id\n        tasksFlowEnabled\n        shipmentsEnabled\n        partsQuantityEnabled\n        rrrEnabled\n        oemPartsEnabled\n        companyId\n        name\n        vehicleType\n        plan {\n          ...Plan\n          __typename\n        }\n        __typename\n      }\n      departments {\n        id\n        tasksFlowEnabled\n        companyId\n        name\n        vehicleType\n        partsQuantityEnabled\n        rrrEnabled\n        oemPartsEnabled\n        shipmentsEnabled\n        __typename\n      }\n      companies {\n        id\n        name\n        __typename\n      }\n      roles {\n        ...Role\n        __typename\n      }\n      __typename\n    }\n    __typename\n  }\n}\n\nfragment Role on Role {\n  id\n  name\n  departmentId\n  companyId\n  partnership\n  distributorPermissions {\n    ...Permission\n    __typename\n  }\n  departmentPermissions {\n    ...Permission\n    __typename\n  }\n  companyPermissions {\n    ...Permission\n    __typename\n  }\n  __typename\n}\n\nfragment Permission on Permission {\n  id\n  name\n  __typename\n}\n\nfragment Tokens on Tokens {\n  accessToken\n  refreshToken\n  idToken\n  __typename\n}\n\nfragment Plan on Plan {\n  id\n  name\n  price\n  default\n  __typename\n}\n"
@@ -61,6 +61,34 @@ class Request:
 
 
 class RecarRequest(Request):
+
+    def get_users(self):
+        data = {
+            "operationName": "FetchUsers",
+            "variables": {
+                "payload": {
+                    "companyIds": "9155",
+                    "departmentIds": "9182"
+                },
+                "page": "1",
+                "size": "50",
+                "sort": {
+                    "column": "name",
+                    "order": "asc"
+                },
+                "showId": False,
+                "showName": True,
+                "showEmail": True,
+                "showRoles": True,
+                "showDepartments": True,
+                "showCompanies": False,
+                "showPhoneNumber": True,
+                "showLanguage": False
+            },
+            "query": "query FetchUsers($payload: GetUsersInput, $size: Int, $page: Int, $sort: UserSort, $showName: Boolean!, $showRoles: Boolean!, $showDepartments: Boolean!, $showCompanies: Boolean!, $showPhoneNumber: Boolean!, $showEmail: Boolean!, $showLanguage: Boolean!) {\n  users(payload: $payload, size: $size, page: $page, sort: $sort) {\n    nodes {\n      id\n      admin\n      primaryDepartmentId\n      email @include(if: $showEmail)\n      firstname @include(if: $showName)\n      lastname @include(if: $showName)\n      picture @include(if: $showName) {\n        id\n        url\n        __typename\n      }\n      phoneNumber @include(if: $showPhoneNumber)\n      verified\n      language @include(if: $showLanguage)\n      departments @include(if: $showDepartments) {\n        id\n        name\n        __typename\n      }\n      companies @include(if: $showCompanies) {\n        id\n        name\n        __typename\n      }\n      roles @include(if: $showRoles) {\n        id\n        name\n        departmentId\n        companyId\n        __typename\n      }\n      __typename\n    }\n    __typename\n  }\n}\n"
+        }
+        response = self.post(body=data)
+        return response['data']['users']['nodes']
 
     def get_categories(self):
         data = {
@@ -163,7 +191,7 @@ class RecarRequest(Request):
                     "nearestParentId": None
                 },
                 "page": "1",
-                "size": "100000"
+                "size": "200000"
             },
             "query": "query FetchParts($payload: GetPartsInput, $size: Int, $page: Int) {\n  parts(payload: $payload, size: $size, page: $page) {\n    nodes {\n      id\n                                         __typename\n    }\n    __typename\n  }\n}\n"
         }
@@ -247,3 +275,42 @@ class RecarRequest(Request):
         }
         response = self.post(data)
         return response['data']['part']['picturesV2']
+
+    def get_orders(self):
+        data = {
+            "operationName": "FetchOrders",
+            "variables": {
+                "payload": {
+                    "departmentIds": "9182"
+                },
+                "page": "1",
+                "size": "20000",
+                "sort": {
+                    "column": "id",
+                    "order": "desc"
+                },
+                "showId": True,
+                "showParts": True,
+                "showPartId": False,
+                "showComment": False
+            },
+
+            "query": "query FetchOrders($payload: GetOrdersInput, $page: Int, $size: Int, $sort: OrderSort) {\n  orders(payload: $payload, page: $page, size: $size, sort: $sort) {\n    nodes {\n      id\n      }}}"
+        }
+        response = self.post(data)['data']['orders']['nodes']
+        data["variables"]["payload"]["returning"] = True
+        response.extend(self.post(data)['data']['orders']['nodes'])
+        return response
+
+    def get_order(self, order_id: int):
+        data = {
+            "operationName": "FetchOrder",
+            "variables": {
+                "isAdmin": True,
+                "id": order_id
+            },
+            "query": "query FetchOrder($id: ID, $isAdmin: Boolean!) {\n  order(id: $id) {\n    id\n    type\n    originalType @include(if: $isAdmin)\n    delivery\n    client {\n      id\n      name\n      nickname\n      departmentId\n      email\n      phoneNumber\n      city\n      country\n      postalCode\n      address\n      deliveryAddress\n      deliveryCity\n      deliveryPostalCode\n      deliveryCountry\n      companyName\n      companyCode\n      companyVatCode\n      companyAddress\n      companyPhoneNumber\n      companyEmail\n      companyCity\n      companyCountry\n      companyPostalCode\n      __typename\n    }\n    clientType\n    user {\n      id\n      firstname\n      lastname\n      __typename\n    }\n    department {\n      id\n      name\n      partsQuantityEnabled\n      shipmentsEnabled\n      __typename\n    }\n    parentOrder {\n      id\n      __typename\n    }\n    returningOrders {\n      id\n      partsSnapshot {\n        id\n        __typename\n      }\n      __typename\n    }\n    orderReservation {\n      validTill\n      __typename\n    }\n    partsSnapshot {\n      id\n      accountingCode\n      price\n      nearestParentId\n      sellPrice\n      reason\n      discount\n      comment\n      quantity\n      returning\n      resolution\n      shipmentPrice\n      refundAmount\n      sellShipmentPrice\n      __typename\n    }\n    partsRetrieved\n    location {\n      id\n      name\n      __typename\n    }\n    shipment {\n      id\n      courier\n      method\n      multiparcelsShipmentId\n      multiparcelsError\n      multiparcelsManifestId\n      estimatedDelivery\n      priceSeller\n      priceClient\n      trackingCodes {\n        code\n        createdAt\n        __typename\n      }\n      selectedCourier\n      selectedMethod\n      selectedTerminal\n      selectedCity\n      selectedPickupType\n      selectedDropoffType\n      pickupType\n      dropoffType\n      __typename\n    }\n    name\n    address\n    city\n    postalCode\n    country\n    phoneNumber\n    email\n    companyName\n    companyCode\n    companyVatCode\n    comment\n    paymentType\n    status\n    paymentCompleted\n    deliveryName\n    deliveryEmail\n    deliveryPhoneNumber\n    deliveryName\n    vatAmount\n    vatPercentage\n    deliveryAddress\n    cashOnDelivery\n    deliveryCity\n    deliveryPostalCode\n    deliveryCountry\n    totalPrice\n    createdAt\n    updatedAt\n    discount\n    price\n    returning\n    shippingPrice\n    priceWithVat\n    externalOrderId\n    includeShippingPrice\n    deleted\n    freeLtShipping\n    paymentCompletedAt\n    departmentId\n    correspondingOrderId\n    relatedOrderIds\n    externalAccount\n    invoice {\n      id\n      __typename\n    }\n    creditInvoice {\n      id\n      __typename\n    }\n    __typename\n  }\n}\n"
+        }
+
+        response = self.post(data)
+        return response['data']['order']

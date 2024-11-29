@@ -3,11 +3,12 @@ import uuid
 from django.core.exceptions import ValidationError
 from django.utils.translation import gettext as _
 
+from apps.address.models import Address
 from apps.order.enums import *
 from apps.product.models import Product
 from apps.stock.models import Stock, Warehouse
 from base import models as base_models
-from apps.address.models import Address
+from apps.product.enums import StatusChoices
 
 
 def default_uuid():
@@ -25,6 +26,7 @@ class Order(base_models.BaseModel):
     discount = models.IntegerField(default=0)
     warehouse = models.ForeignKey(Warehouse, on_delete=models.SET_NULL, null=True, blank=True)
     client = models.CharField(default='', null=True, blank=True, max_length=255)
+    refund_order = models.ForeignKey('self', null=True, blank=True, related_name='refunds', on_delete=models.CASCADE)
 
     # Поля для данных клиента
     first_name = models.CharField('Имя', max_length=255, null=True, blank=True)
@@ -65,13 +67,14 @@ class Order(base_models.BaseModel):
         verbose_name_plural = _('Заказы')
 
     def __str__(self):
-        return f"{self.client} - {self.warehouse.name}"
+        return f"{self.id} - {self.warehouse.name}"
 
 
 class OrderItem(models.Model):
     product = models.ForeignKey(Product, on_delete=models.CASCADE)
     quantity = models.PositiveIntegerField(default=1)
     order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name='goods')
+    is_returning = models.BooleanField(default=False)
 
     def clean(self):
         stock = Stock.objects.filter(product=self.product).last()
@@ -86,3 +89,18 @@ class OrderItem(models.Model):
     class Meta:
         verbose_name = _('Деталь заказа')
         verbose_name_plural = _('Детали заказа')
+
+    @property
+    def product_status(self):
+        return StatusChoices(self.product.status).label
+
+
+class ImportOrderData(models.Model):
+    data = models.JSONField()
+
+    def __str__(self):
+        return f"{self.id}"
+
+    class Meta:
+        verbose_name = 'Импротированные заказы'
+        verbose_name_plural = 'Импротированные заказы'

@@ -31,11 +31,14 @@ class Product(BaseModel):
     mileage = models.FloatField(null=True, blank=True)
     mileageType = models.ForeignKey(MileageType, verbose_name='Тип пробега', on_delete=models.SET_NULL, null=True,
                                     blank=True)
+    parent = models.ForeignKey(
+        'self', on_delete=models.CASCADE, null=True, blank=True, related_name='components'
+    )
 
     histories = GenericRelation(History)
 
     from apps.stock.models import Warehouse
-    warehouse = models.ForeignKey(Warehouse, on_delete=models.SET_NULL, null=True, blank=True)
+    warehouse = models.ForeignKey(Warehouse, on_delete=models.SET_NULL, null=True, blank=True, related_name='products')
 
     def __str__(self):
         return self.name

@@ -7,7 +7,7 @@ from rest_framework.viewsets import ModelViewSet
 
 from apps.address import serializers
 from apps.address.models import Address
-from users.models.User import ClientProfile
+from users.models.User import User
 
 
 class AddressModelViewSet(ModelViewSet):
@@ -28,7 +28,7 @@ class AddressModelViewSet(ModelViewSet):
         return Response(response_data, status=status.HTTP_201_CREATED, headers=headers)
 
     def get_user_addresses(self, request, *args, **kwargs):
-        user = get_object_or_404(ClientProfile, id=kwargs.get('pk'))
+        user = get_object_or_404(User, id=kwargs.get('pk'))
         addresses = Address.objects.filter(user=user)
         response_data = self.serializer_class(addresses, many=True).data
         return Response(response_data, status=status.HTTP_200_OK)

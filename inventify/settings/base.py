@@ -34,7 +34,8 @@ THIRD_PARTY_APPS = [
     'django_json_widget',
     'eav',
     # 'silk',
-    'djangoql'
+    'djangoql',
+    'drf_api_logger',
 ]
 
 LOCAL_APPS = [
@@ -63,6 +64,7 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'base.middlewares.RequestMiddleware.RequestMiddleware',
+    'drf_api_logger.middleware.api_logger_middleware.APILoggerMiddleware'
     # 'silk.middleware.SilkyMiddleware',
 
 ]
@@ -153,6 +155,9 @@ REST_FRAMEWORK = {
         'rest_framework.filters.OrderingFilter',
         'rest_framework.filters.SearchFilter'
     ),
+    'DEFAULT_PERMISSION_CLASSES': [
+        'inventify.permissions.IsStaff',
+    ],
     'EXCEPTION_HANDLER': 'base.exception_handler.custom_exception_handler'
 
 }
@@ -230,3 +235,5 @@ LOGGING = {
         },
     },
 }
+
+DRF_API_LOGGER_DATABASE = True

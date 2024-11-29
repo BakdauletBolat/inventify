@@ -86,6 +86,24 @@ files = [
 ]
 
 [[package]]
+name = "bleach"
+version = "6.2.0"
+description = "An easy safelist-based HTML-sanitizing tool."
+category = "main"
+optional = false
+python-versions = ">=3.9"
+files = [
+    {file = "bleach-6.2.0-py3-none-any.whl", hash = "sha256:117d9c6097a7c3d22fd578fcd8d35ff1e125df6736f554da4e432fdd63f31e5e"},
+    {file = "bleach-6.2.0.tar.gz", hash = "sha256:123e894118b8a599fd80d3ec1a6d4cc7ce4e5882b1317a7e1ba69b56e95f991f"},
+]
+
+[package.dependencies]
+webencodings = "*"
+
+[package.extras]
+css = ["tinycss2 (>=1.1.0,<1.5)"]
+
+[[package]]
 name = "celery"
 version = "5.4.0"
 description = "Distributed Task Queue."
@@ -502,19 +520,18 @@ Django = ">=3.2"
 
 [[package]]
 name = "django-eav2"
-version = "1.6.1"
+version = "1.7.1"
 description = "Entity-Attribute-Value storage for Django"
 category = "main"
 optional = false
 python-versions = "<4.0,>=3.8"
 files = [
-    {file = "django_eav2-1.6.1-py3-none-any.whl", hash = "sha256:0956b1edf34f0f0a0c80f65b575cb5f36ae4d8b75eebc3c6c6c6fe659273ad82"},
-    {file = "django_eav2-1.6.1.tar.gz", hash = "sha256:a52caf3dacf841fbe9195bcae0a686c760d41a82bf4a02bf4378b9fdbd773f4c"},
+    {file = "django_eav2-1.7.1-py3-none-any.whl", hash = "sha256:1b05f87ea6555380523436f542aea0802efea79dba43ffd16738086998036f9c"},
+    {file = "django_eav2-1.7.1.tar.gz", hash = "sha256:b91770f2634a2224ba9359d407cbac68356f2bbe8eedfb3eade5df510808be9a"},
 ]
 
 [package.dependencies]
-django = ">=3.2,<5.1"
-pyyaml = {version = ">=6.0.1,<7.0.0", markers = "python_version >= \"3.12\" and python_version < \"4.0\""}
+django = ">=4.2,<5.2"
 
 [[package]]
 name = "django-filter"
@@ -662,6 +679,22 @@ doc = ["Sphinx (>=1.6.5,<2)", "sphinx_rtd_theme (>=0.1.9)"]
 lint = ["flake8", "isort", "pep8"]
 python-jose = ["python-jose (==3.3.0)"]
 test = ["cryptography", "freezegun", "pytest", "pytest-cov", "pytest-django", "pytest-xdist", "tox"]
+
+[[package]]
+name = "drf-api-logger"
+version = "1.1.16"
+description = "An API Logger for your Django Rest Framework project."
+category = "main"
+optional = false
+python-versions = ">=3.6"
+files = [
+    {file = "drf_api_logger-1.1.16-py3-none-any.whl", hash = "sha256:eada8d1b3226519636a53f4878846d4258b28c177da314306075e0ca575668e0"},
+    {file = "drf_api_logger-1.1.16.tar.gz", hash = "sha256:8dd88c167969ba020c3655073651aeb5bab14d56ba71861bab3a87dfe4317e51"},
+]
+
+[package.dependencies]
+bleach = ">=3.1.5"
+djangorestframework = ">=3.7.4"
 
 [[package]]
 name = "drf-yasg"
@@ -1673,6 +1706,18 @@ files = [
 ]
 
 [[package]]
+name = "webencodings"
+version = "0.5.1"
+description = "Character encoding aliases for legacy web content"
+category = "main"
+optional = false
+python-versions = "*"
+files = [
+    {file = "webencodings-0.5.1-py2.py3-none-any.whl", hash = "sha256:a0af1213f3c2226497a97e2b3aa01a7e4bee4f403f95be16fc9acd2947514a78"},
+    {file = "webencodings-0.5.1.tar.gz", hash = "sha256:b36a1c245f2d304965eb4e0a82848379241dc04b865afcc4aab16748587e1923"},
+]
+
+[[package]]
 name = "win32-setctime"
 version = "1.1.0"
 description = "A small Python utility to set file creation time on Windows"
@@ -1761,4 +1806,4 @@ testing = ["coverage (>=5.0.3)", "zope.event", "zope.testing"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.10"
-content-hash = "72b4505105aeb73a32da585bd3c3960c3420f32614b5c01facefec208d412fb2"
+content-hash = "957bffd501bed179159b816972ef7a592005f73ecf3541ecff06d3c3f4a4a891"

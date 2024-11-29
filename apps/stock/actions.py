@@ -71,6 +71,9 @@ class StockAction:
         # Получаем или создаем запись Stock
         stock = self.stock_repository.get_or_create_stock(product, warehouse, quality)
 
+        if product.parent:
+            raise ValidationError("Разобранная деталь не перемещается отдельно")
+
         # Проверка достаточности товара при отгрузке
         if movement_type == MovementEnum.OUT and quantity > stock.quantity:
             raise ValidationError("Недостаточно товара на складе для выполнения операции")
@@ -149,6 +152,13 @@ class ImportWarehouseAction:
                 id=product['id'],
                 warehouse_id=locationId
             ))
+
+            if len(product['nearestChildren']):
+                for child in product['nearestChildren']:
+                    products_to_update.append(Product(
+                        id=child['id'],
+                        warehouse_id=locationId
+                    ))
 
         Product.objects.bulk_update(products_to_update, ['warehouse_id'])
         Stock.objects.bulk_create(stocks,

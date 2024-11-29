@@ -2,7 +2,7 @@ from django.db import models
 from django.utils.translation import gettext as _
 
 from handbook.models import City
-from users.models.User import ClientProfile
+from users.models.User import User
 
 
 class Address(models.Model):
@@ -12,7 +12,7 @@ class Address(models.Model):
     building = models.CharField('Дом', max_length=255, null=True, blank=True)
     coords = models.JSONField('Кордината', max_length=255, null=True, blank=True)
     city = models.ForeignKey(City, null=True, blank=True, on_delete=models.CASCADE, related_name='addresses')
-    user = models.ForeignKey(ClientProfile, on_delete=models.CASCADE, related_name='addresses', null=True, blank=True)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='addresses', null=True, blank=True)
 
     def __str__(self):
         return self.address

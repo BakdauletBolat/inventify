@@ -1,9 +1,10 @@
-from django.contrib.auth.models import AbstractBaseUser
+import uuid
+
+from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin, Permission
 from django.db import models
 from django.db.models import IntegerChoices
 from django.utils import timezone
 
-from base import models as base_models
 from handbook.models import City
 from users import fields
 from users import managers
@@ -28,14 +29,26 @@ class PROFILE_TYPES(IntegerChoices):
     )
 
 
-class User(AbstractBaseUser):
+class Role(models.Model):
+    name = models.CharField(max_length=255, unique=True)
+    description = models.TextField(blank=True, null=True)
+
+    def __str__(self):
+        return self.name
+
+
+def gen_uuid():
+    return uuid.uuid4()
+
+
+class User(AbstractBaseUser, PermissionsMixin):
     phone = fields.PhoneField(unique=True)
+    uuid = models.UUIDField(default=gen_uuid, editable=False, unique=True, null=True, blank=True)
     email = models.EmailField(null=True, blank=True, max_length=255)
     first_name = models.CharField('Имя', max_length=255)
     last_name = models.CharField('Фамилия', max_length=255)
     middle_name = models.CharField('Отчество', max_length=255, null=True, blank=True)
-
-    profile_type = models.IntegerField(choices=PROFILE_TYPES.choices, default=PROFILE_TYPES.CLIENT)
+    roles = models.ManyToManyField(Role, verbose_name='Роли', related_name='users')
     city = models.ForeignKey(City, on_delete=models.CASCADE, related_name='users', null=True, blank=True,
                              verbose_name='Город')
 
@@ -62,28 +75,3 @@ class User(AbstractBaseUser):
 
     def has_module_perms(self, app_label):
         return self.is_superuser
-
-
-class SupervisorProfile(User):
-    class Meta:
-        verbose_name = 'Админ'
-        verbose_name_plural = 'Админы'
-
-
-class EmployeeProfile(User):
-    class Meta:
-        verbose_name = 'Сотрудник'
-        verbose_name_plural = 'Сотрудник'
-
-
-class SellerProfile(User):
-    class Meta:
-        verbose_name = 'Продавец'
-        verbose_name_plural = 'Продавец'
-
-
-class ClientProfile(User):
-    class Meta:
-        verbose_name = 'Клиент'
-        verbose_name_plural = 'Клиенты'
-    # user = models.ForeignKey(User, on_delete=models.CASCADE)

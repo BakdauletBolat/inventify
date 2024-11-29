@@ -26,12 +26,13 @@ django-json-widget = "^2.0.1"
 flower = "^2.0.1"
 python-dotenv = "^1.0.1"
 django-redis = "^5.4.0"
-django-eav2 = "1.6.1"
+django-eav2 = "1.7.1"
 gevent = "^24.2.1"
 django-silk = "^5.1.0"
 djangoql = "0.17.1"
 pydantic = "^2.9.2"
 django-celery-beat = "^2.7.0"
+drf-api-logger = "^1.1.16"
 
 
 [build-system]

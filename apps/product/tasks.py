@@ -61,3 +61,12 @@ def update_status_products():
 
 def get_products_id(products: list):
     return list(map(lambda x: int(x['id']), products))
+
+
+@shared_task
+def import_parent_products():
+    from apps.product.actions import ImportProductAction
+    action = ImportProductAction()
+    products = ImportProductData.objects.exclude(data__nearestParentId=None)
+    for product in products:
+        action.input_parent(product.data)

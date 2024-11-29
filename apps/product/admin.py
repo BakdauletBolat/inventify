@@ -99,13 +99,20 @@ class PriceTabularInline(admin.TabularInline):
     extra = 0
 
 
+class ProductComponents(admin.TabularInline):
+    model = Product
+    extra = 0
+    raw_id_fields = ('modification', 'parent',)
+    fields = ('name', 'category', 'status', 'warehouse',)
+
+
 class ProductAdmin(DjangoQLSearchMixin, BaseEntityAdmin):
     form = ProductAdminForm
     search_fields = ('name',)
     list_display = ('id', 'name', 'status')
-    raw_id_fields = ('modification',)
+    raw_id_fields = ('modification', 'parent',)
     list_filter = ('status',)
-    inlines = [ProductImageTabularInline, ProductDetailTabularInline, PriceTabularInline]
+    inlines = [ProductComponents, ProductImageTabularInline, ProductDetailTabularInline, PriceTabularInline]
 
     def get_last_price(self, product):
         return product.price.last()

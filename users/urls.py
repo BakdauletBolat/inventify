@@ -13,8 +13,21 @@ jwt_url = [
 ]
 
 user_url = [
-    path('', views.UserListCreateView.as_view(), name='user_list_create'),
-    path('<int:pk>/', views.UserRetrieveUpdateDestroyAPIView.as_view(), name='user_retrieve_update_destroy'),
+
+    path('', views.UserViewSet.as_view(
+        {
+            'post': 'create',
+            'get': 'list'
+        })),
+
+    path('<int:pk>/', views.UserViewSet.as_view(
+        {
+            'delete': 'destroy',
+            'patch': 'update',
+            'get': 'retrieve'
+        })),
+
+    path('roles/', views.UserViewSet.as_view({'get': 'roles'})),
 ]
 
 urlpatterns = jwt_url + user_url

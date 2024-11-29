@@ -40,7 +40,12 @@ app.conf.beat_schedule = {
     'Обновление статуса продуктов': {
         'task': 'apps.product.tasks.update_status_products',
         'schedule': crontab(hour=00, minute=30)
-    }
+    },
+
+    'Импорт заказов': {
+        'task': 'apps.order.tasks.import_orders_from_recar',
+        'schedule': crontab(hour=2, minute=00)
+    },
 }
 
 # Using a string here means the worker doesn't have to serialize

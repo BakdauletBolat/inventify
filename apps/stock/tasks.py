@@ -28,7 +28,7 @@ def import_warehouse():
     size = 50
     page = 1
 
-    for pageNumber in range(page, 110, 1):
+    for pageNumber in range(page, 150, 1):
         warehouses = RecarRequest().get_warehouses(pageNumber, size)
         for warehouse in warehouses:
             ImportWarehouseAction().run(warehouse)

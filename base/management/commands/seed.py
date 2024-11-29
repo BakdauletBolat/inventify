@@ -10,7 +10,7 @@ from apps.product.enums import StatusChoices
 from apps.product.models.Price import Price
 from apps.product.models.Product import Product
 from base.requests import RecarRequest
-from users.models.User import SupervisorProfile
+from users.models.User import User
 
 models = [Product, PlatformType, Price]
 # python manage.py seed --mode=refresh
@@ -128,7 +128,7 @@ def run_seed(self, mode):
     clear_data()
     if mode == MODE_CLEAR:
         return
-    SupervisorProfile.objects.create_superuser(phone="+77089531792", password="123")
+    User.objects.create_superuser(phone="+77089531792", password="123")
 
     # Creating 15 addresses
     create_modification()

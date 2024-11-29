@@ -135,3 +135,8 @@ class ProductViewSetV2(ModelViewSet):
         ProductAction().assign_to_warehouse(serializer.validated_data['product'],
                                             serializer.validated_data['warehouse'])
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+    def add_component(self, request, *args, **kwargs):
+        pass
+    def remove_component(self, request, *args, **kwargs):
+        pass

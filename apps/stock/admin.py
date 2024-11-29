@@ -12,6 +12,12 @@ class StockTabularInline(admin.TabularInline):
     readonly_fields = ('product',)
     extra = 0
 
+    def get_queryset(self, request):
+        queryset = super().get_queryset(request)
+        if not self.has_view_or_change_permission(request):
+            queryset = queryset.none()
+        return queryset.filter(quantity__gt=0)
+
 
 class WarehouseAdmin(DjangoQLSearchMixin, admin.ModelAdmin):
     list_display = ('id', 'name', 'min_stock_level', 'get_stock')

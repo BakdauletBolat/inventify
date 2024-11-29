@@ -1,4 +1,5 @@
 import logging
+import os
 from io import BytesIO
 
 import requests
@@ -9,6 +10,7 @@ from rest_framework.exceptions import ValidationError
 
 from apps.car.models import ModificationDraft
 from apps.car.tasks import update_eav_attr
+from apps.category.models import Category
 from apps.product.enums import StatusChoicesRecar, StatusChoices
 from apps.product.models.Price import Price
 from apps.product.models.Product import ProductDetail, ProductImage, Product
@@ -66,6 +68,14 @@ class ProductAction:
 
         product.save()
 
+    @staticmethod
+    def add_component(product: Product, category: Category):
+        pass
+
+    @staticmethod
+    def remove_component(product: Product, category: Category):
+        pass
+
 
 class ImportProductAction:
 
@@ -115,7 +125,10 @@ class ImportProductAction:
                 defect=product_data['defectComment'],
                 comment=product_data['comment'],
                 status=StatusChoicesRecar.__getitem__(name=product_data['status']),
+                created_at=product_data['createdAt']
             )
+
+            self.input_parent(product_data)
 
             ProductDetail.objects.create(
                 height=product_data['height'],
@@ -132,6 +145,9 @@ class ImportProductAction:
             modification_attr = ModificationDraft.objects.get(product_id=product.id)
             update_eav_attr(modification_attr.data, product.id)
 
+            if os.environ.get('APP_ENV', 'production') == 'local':
+                return
+
             try:
                 self.save_image(product)
             except Exception as e:
@@ -139,3 +155,9 @@ class ImportProductAction:
 
         except utils.IntegrityError as exc:
             print(exc)
+
+    @staticmethod
+    def input_parent(product_data: dict):
+        product = Product.objects.get(id=product_data['id'])
+        product.parent_id = product_data['nearestParentId']
+        product.save()

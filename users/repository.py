@@ -7,17 +7,7 @@ class UserRepository(BaseRepository):
 
     @classmethod
     def create(cls, **kwargs):
-        user = None
-        # user = cls.model.objects.create(**kwargs)
-        match kwargs['profile_type']:
-            case PROFILE_TYPES.SUPERVISOR:
-                user = SupervisorProfile.objects.create(**kwargs)
-                user.is_superuser = True
-                user.save()
-            case PROFILE_TYPES.CLIENT:
-                user = ClientProfile.objects.create(**kwargs)
-            case PROFILE_TYPES.SELLER:
-                user = SellerProfile.objects.create(**kwargs)
-            case PROFILE_TYPES.EMPLOYEE:
-                user = EmployeeProfile.objects.create(**kwargs)
+        roles = kwargs.pop('roles', [])
+        user = cls.model.objects.create(**kwargs)
+        user.roles.set(roles)
         return user
