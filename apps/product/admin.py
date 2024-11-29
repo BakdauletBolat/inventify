@@ -106,7 +106,7 @@ class ProductComponents(admin.TabularInline):
     fields = ('name', 'category', 'status', 'warehouse',)
 
 
-class ProductAdmin(DjangoQLSearchMixin, BaseEntityAdmin):
+class ProductAdmin(DjangoQLSearchMixin, admin.ModelAdmin):
     form = ProductAdminForm
     search_fields = ('name',)
     list_display = ('id', 'name', 'status')
