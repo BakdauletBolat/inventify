@@ -156,7 +156,7 @@ REST_FRAMEWORK = {
         'rest_framework.filters.SearchFilter'
     ),
     'DEFAULT_PERMISSION_CLASSES': [
-        'inventify.permissions.IsStaff',
+        'rest_framework.permissions.AllowAny',
     ],
     'EXCEPTION_HANDLER': 'base.exception_handler.custom_exception_handler'
 
