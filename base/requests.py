@@ -260,7 +260,7 @@ class RecarRequest(Request):
                 "page": 1,
                 "size": "300"
             },
-            "query": "query FetchLocationParts($payload: GetPartsInput, $page: Int, $size: Int) {\n  parts(payload: $payload, page: $page, size: $size) {\n    nodes {\n      id\n            location {\n        id\n        name\n        departmentId\n        __typename\n      }\n      oemCodes {\n        id\n        code\n        __typename\n      }\n            quantity\n      __typename\n    }\n    __typename\n  }\n}\n"
+            "query": "query FetchLocationParts($payload: GetPartsInput, $page: Int, $size: Int) {\n  parts(payload: $payload, page: $page, size: $size) {\n    nodes {\n      id\n      category {\n        id\n        name\n        __typename\n      }\n      picturesV2 {\n        id\n        order\n        status\n        s195x130\n        s360x240\n        optimized\n        __typename\n      }\n      location {\n        id\n        name\n        departmentId\n        __typename\n      }\n      oemCodes {\n        id\n        code\n        __typename\n      }\n      price\n      nearestChildren {\n        id\n        __typename\n      }\n      quantity\n      __typename\n    }\n    __typename\n  }\n}\n"
         }
         response = self.post(data)
         return response['data']['parts']['nodes']
