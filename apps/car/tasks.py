@@ -66,7 +66,7 @@ def import_car_data_recar():
     create_modifications_draft()
     time.sleep(50)
     create_products_draft()
-    time.sleep(600)
+    time.sleep(300)
     create_products()
 
 
