@@ -29,7 +29,7 @@ class ImportOrderAction:
             order.save()
 
         for item in order_data['partsSnapshot']:
-            if item['nearestParentId'] is not None:
+            if item['nearestParentId'] is None:
                 OrderItem.objects.create(
                     product_id=item['id'],
                     order=order,
