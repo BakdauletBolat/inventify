@@ -1,3 +1,4 @@
+from django.contrib.auth.models import AnonymousUser
 from rest_framework.permissions import BasePermission
 
 from users.enums import RoleEnum
@@ -39,7 +40,23 @@ class IsStaff(BasePermission):
     allowed_roles = [role.value for role in (RoleEnum)]
 
     def has_permission(self, request, view):
+        if isinstance(request.user, AnonymousUser):
+            return False
         if request.user.is_superuser:
             return True
         user_roles = request.user.roles.values_list('name', flat=True)
         return any(role in self.allowed_roles for role in user_roles)
+
+
+class InventifyAPIPermission(BasePermission):
+    """
+    Дает доступ только сотрудникам (через IsStaff) для URL, начинающихся с /api/admin.
+    Остальные URL доступны для всех.
+    """
+    def has_permission(self, request, view):
+        # Проверяем, начинается ли URL с /api/admin
+        if request.path.startswith('/api/admin'):
+            # Используем ваш IsStaff для проверки разрешений
+            return IsStaff().has_permission(request, view)
+        # Для всех остальных URL доступ разрешен
+        return True

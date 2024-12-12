@@ -155,8 +155,11 @@ REST_FRAMEWORK = {
         'rest_framework.filters.OrderingFilter',
         'rest_framework.filters.SearchFilter'
     ),
+    # 'DEFAULT_PERMISSION_CLASSES': [
+    #     'rest_framework.permissions.AllowAny',
+    # ],
     'DEFAULT_PERMISSION_CLASSES': [
-        'rest_framework.permissions.AllowAny',
+        'inventify.permissions.InventifyAPIPermission',
     ],
     'EXCEPTION_HANDLER': 'base.exception_handler.custom_exception_handler'
 

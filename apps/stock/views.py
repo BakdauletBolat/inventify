@@ -18,7 +18,7 @@ class WareHouseViewSet(viewsets.ModelViewSet):
 
     def retrieve(self, request, *args, **kwargs):
         instance = self.get_object()
-        serializer = self.get_serializer(instance)
+        serializer = serializers.WarehouseDetailSerializer(instance, context={"request": request})
         return Response(serializer.data)
 
 

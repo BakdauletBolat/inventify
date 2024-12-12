@@ -7,16 +7,26 @@ from inventify.yasg import urlpatterns as yasg_urlpatterns
 
 urlpatterns = yasg_urlpatterns + [
     path('admin/', admin.site.urls),
-    path('api/', include([
+    path('api/admin/', include([
         path('users/', include('users.urls')),
         path('address/', include('apps.address.urls')),
-        path('', include('apps.product.urls')),
+        path('product/', include('apps.product.urls')),
         path('car/', include('apps.car.urls')),
         path('category/', include('apps.category.urls')),
         path('stock/', include('apps.stock.urls')),
         path('orders/', include('apps.order.urls')),
         path('handbook/', include('handbook.urls')),
     ])),
+    path('api/', include([
+        path('users/', include('users.urls')),
+        path('', include('apps.product.urls')),
+        path('address/', include('apps.address.urls')),
+        path('car/', include('apps.car.urls')),
+        path('category/', include('apps.category.urls')),
+        path('stock/', include('apps.stock.urls')),
+        path('orders/', include('apps.order.urls')),
+        path('handbook/', include('handbook.urls')),
+    ]))
 ]
 urlpatterns += yasg_urlpatterns
 # urlpatterns += [path('silk/', include('silk.urls', namespace='silk'))]

@@ -20,7 +20,9 @@ class ProductImageSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
     def get_image(self, instance):
-        request = self.context.get('request')
+        request = self.context.get('request', None)
+        if request is None:
+            return None
         image = instance.image.url
         return request.build_absolute_uri(image)
 
@@ -70,7 +72,7 @@ class ProductSerializerV2(ProductSerializer):
         return ProductImageSerializer(obj.pictures.all(), many=True, context=self.context).data
 
 
-class ProductListSerializerV2(ProductSerializer):
+class ProductListSerializerV2(ProductSerializerV2):
     modelCar = serializers.SerializerMethodField('get_modelCar')
 
     class Meta(ProductSerializer.Meta):
@@ -87,10 +89,6 @@ class ProductListSerializerV2(ProductSerializer):
 
     def get_pictures(self, obj: Product):
         return ProductImageSerializer(obj.pictures.all(), many=True, context=self.context).data
-
-    @staticmethod
-    def get_price(obj):
-        return obj.latest_price
 
     @staticmethod
     def get_modelCar(obj: Product):

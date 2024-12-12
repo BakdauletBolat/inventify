@@ -8,5 +8,5 @@ class RequestMiddleware(MiddlewareMixin):
 
     def process_request(self, request):
         RequestMiddleware.thread_local.current_user = None
-        if request.user != AnonymousUser:
+        if not (isinstance(request.user, AnonymousUser)):
             RequestMiddleware.thread_local.current_user = request.user

@@ -40,6 +40,13 @@ class WareHouseSerializer(serializers.ModelSerializer):
         return warehouse
 
 
+class WarehouseDetailSerializer(WareHouseSerializer):
+    products = serializers.ListSerializer(child=product_serializers.ProductListSerializerV2(), read_only=True)
+
+    class Meta(WareHouseSerializer.Meta):
+        fields = WareHouseSerializer.Meta.fields + ('products', )
+
+
 class StockReceiptSerializer(serializers.ModelSerializer):
     product = product_serializers.ProductSerializer(read_only=True)
     product_id = serializers.IntegerField(write_only=True)
