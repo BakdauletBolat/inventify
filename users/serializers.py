@@ -82,8 +82,9 @@ class UserUpdateSerializer(UserSerializer):
 class UserRegisterSerializer(UserSerializer):
     password = serializers.CharField(write_only=True, required=True, validators=[validate_password])
     password2 = serializers.CharField(write_only=True, required=True)
-    roles = serializers.ListSerializer(required=True,
-                                       child=serializers.PrimaryKeyRelatedField(queryset=Role.objects.all()))
+    roles = serializers.ListSerializer(required=False,
+                                       child=serializers.PrimaryKeyRelatedField(queryset=Role.objects.all()),
+                                       allow_empty=True)
     city = serializers.PrimaryKeyRelatedField(queryset=City.objects.all(), required=True)
 
     def validate(self, attrs):
