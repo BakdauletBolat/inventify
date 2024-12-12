@@ -14,7 +14,6 @@ from users.models.User import User, Role
 class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all().order_by('id')
     serializer_class = serializers.UserSerializer
-    permission_classes = [IsAuthenticated, IsManager]
 
     def get_permissions(self):
         """
