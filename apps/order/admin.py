@@ -4,6 +4,7 @@ from django_json_widget.widgets import JSONEditorWidget
 from djangoql.admin import DjangoQLSearchMixin
 
 from apps.order import models
+from apps.order.actions import ImportOrderAction
 from apps.order.models import OrderItem
 
 
@@ -22,7 +23,14 @@ class OrderAdmin(DjangoQLSearchMixin, admin.ModelAdmin):
     raw_id_fields = ('warehouse', 'refund_order',)
 
 
+@admin.action(description='Импортировать в основную базу заказов')
+def import_from_recar(modeladmin, request, queryset: models.ImportOrderData):
+    for obj in queryset:
+        ImportOrderAction().run(obj.data)
+
+
 class ImportOrderDataAdmin(admin.ModelAdmin):
+    actions = [import_from_recar]
     search_fields = ('id',)
     formfield_overrides = {
         JSONField: {'widget': JSONEditorWidget},

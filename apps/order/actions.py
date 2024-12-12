@@ -29,11 +29,9 @@ class ImportOrderAction:
             order.save()
 
         for item in order_data['partsSnapshot']:
-            OrderItem.objects.create(
-                product_id=item['id'],
-                order=order,
-                is_returning=True if item['returning'] is True else False
-            )
-
-
-
+            if item['nearestParentId'] is not None:
+                OrderItem.objects.create(
+                    product_id=item['id'],
+                    order=order,
+                    is_returning=True if item['returning'] is True else False
+                )
