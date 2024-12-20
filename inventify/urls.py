@@ -10,16 +10,18 @@ urlpatterns = yasg_urlpatterns + [
     path('api/admin/', include([
         path('users/', include('users.urls')),
         path('address/', include('apps.address.urls')),
-        path('product/', include('apps.product.urls')),
+        path('product/', include('apps.product.routes.admin')),
         path('car/', include('apps.car.urls')),
         path('category/', include('apps.category.urls')),
         path('stock/', include('apps.stock.urls')),
         path('orders/', include('apps.order.urls')),
         path('handbook/', include('handbook.urls')),
     ])),
+    path('api/v2/', include([
+        path('product/', include('apps.product.routes.client')),
+    ])),
     path('api/', include([
         path('users/', include('users.urls')),
-        path('', include('apps.product.urls')),
         path('address/', include('apps.address.urls')),
         path('car/', include('apps.car.urls')),
         path('category/', include('apps.category.urls')),
@@ -29,7 +31,6 @@ urlpatterns = yasg_urlpatterns + [
     ]))
 ]
 urlpatterns += yasg_urlpatterns
-# urlpatterns += [path('silk/', include('silk.urls', namespace='silk'))]
 
 if settings.DEBUG:
     urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)

@@ -44,7 +44,7 @@ class AdminProductViewSetV2(ModelViewSet):
     queryset = Product.objects.prefetch_related('price',
                                                 'pictures',
                                                 'eav_values').select_related(
-        'category', ).all().order_by('-created_at')
+        'category', 'warehouse').all().order_by('-created_at')
     filter_backends = [DjangoFilterBackend]
     filterset_class = DynamicProductFilterSet
     permission_classes = [IsStaff]
@@ -52,7 +52,7 @@ class AdminProductViewSetV2(ModelViewSet):
     @swagger_auto_schema(request_body=deserializer_class(),
                          responses={201: serializer_class},
                          operation_id='Создание',
-                         tags=['Запчасть V2'],
+                         tags=['Админ/Запчасть'],
                          )
     def create(self, request, *args, **kwargs):
         deserializer = self.deserializer_class(data=request.data)
@@ -62,7 +62,7 @@ class AdminProductViewSetV2(ModelViewSet):
 
     @swagger_auto_schema(responses={200: serializers.ProductListSerializerV2},
                          operation_id='Список',
-                         tags=['Запчасть V2'],
+                         tags=['Админ/Запчасть'],
                          )
     def list(self, request, *args, **kwargs):
         queryset = self.filter_queryset(
@@ -83,7 +83,7 @@ class AdminProductViewSetV2(ModelViewSet):
     @swagger_auto_schema(responses={200: serializers.ProductListSerializerV2, },
                          request_body=deserializer_class,
                          operation_id='Обновить',
-                         tags=['Запчасть V2'],
+                         tags=['Админ/Запчасть'],
                          )
     def update(self, request, *args, **kwargs):
         serializer = self.deserializer_class(data=request.data)
@@ -92,6 +92,11 @@ class AdminProductViewSetV2(ModelViewSet):
         product = ProductAction().update(instance, serializer.validated_data)
         return Response(self.get_serializer(product).data, status=status.HTTP_200_OK)
 
+    @swagger_auto_schema(responses={200: serializers.ProductListSerializerV2, },
+                         request_body=deserializer_class,
+                         operation_id='Присвоить деталь к складу',
+                         tags=['Админ/Запчасть'],
+                         )
     def assign_warehouse(self, request, *args, **kwargs):
         serializer = AssignWarehouseSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -112,6 +117,7 @@ class ProductViewSet(ModelViewSet):
     serializer_class = serializers.ProductSerializerV2
     queryset = Product.objects.prefetch_related('price',
                                                 'pictures',
+                                                'eav_values'
                                                 ).select_related(
         'category', 'warehouse').all().order_by('-created_at')
     filter_backends = [DjangoFilterBackend]

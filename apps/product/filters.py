@@ -77,7 +77,9 @@ class DynamicProductFilterSet(django_filters.FilterSet):
                     filters['manufacturer'] = django_filters.BaseInFilter(
                         method='filter_manufacturer', lookup_expr='in'
                     )
-
+                    filters['modelCar'] = django_filters.BaseInFilter(
+                        method='filter_modelCar', lookup_expr='in'
+                    )
                 else:
                     filters[attribute.name] = django_filters.ModelChoiceFilter(
                         field_name=f'eav__{attribute.slug}', queryset=ModelCar.objects.all()
@@ -115,6 +117,11 @@ class DynamicProductFilterSet(django_filters.FilterSet):
 
     def filter_manufacturer(self, queryset, name, value):
         modelCars = ModelCar.objects.filter(manufacturer_id__in=value)
+        eav_subquery = self.get_eav_subquery(modelCars.values_list('id', flat=True))
+        return queryset.filter(eav_subquery)
+
+    def filter_modelCar(self, queryset, name, value):
+        modelCars = ModelCar.objects.filter(id__in=value)
         eav_subquery = self.get_eav_subquery(modelCars.values_list('id', flat=True))
         return queryset.filter(eav_subquery)
 
