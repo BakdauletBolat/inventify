@@ -29,6 +29,8 @@ class DynamicProductFilterSet(django_filters.FilterSet):
     price = django_filters.RangeFilter(field_name='price__cost')
     category = django_filters.BaseInFilter(field_name='category__id', lookup_expr='in')
     search = django_filters.CharFilter(method='filter_by_product_or_category_name')
+    modification = django_filters.BaseInFilter(field_name='modification__id', lookup_expr='in')
+
     sort = OrderingFilter(
         fields=(
             ('id', 'id'),
