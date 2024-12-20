@@ -97,26 +97,26 @@ class DynamicProductFilterSet(django_filters.FilterSet):
 
     @staticmethod
     def get_eav_subquery(model_car_ids):
-        return Value.objects.filter(
+        return Exists(Value.objects.filter(
             attribute__slug='modelCar',
             generic_value_id__in=model_car_ids,
             entity_id=OuterRef('pk')
-        )
+        ))
 
     def filter_year_start(self, queryset, name, value):
         modelCars = ModelCar.objects.filter(startDate__year__gte=value)
         eav_subquery = self.get_eav_subquery(modelCars.values_list('id', flat=True))
-        return queryset.filter(Exists(eav_subquery))
+        return queryset.filter(eav_subquery)
 
     def filter_year_end(self, queryset, name, value):
         modelCars = ModelCar.objects.filter(endDate__year__lte=value)
         eav_subquery = self.get_eav_subquery(modelCars.values_list('id', flat=True))
-        return queryset.filter(Exists(eav_subquery))
+        return queryset.filter(eav_subquery)
 
     def filter_manufacturer(self, queryset, name, value):
         modelCars = ModelCar.objects.filter(manufacturer_id__in=value)
         eav_subquery = self.get_eav_subquery(modelCars.values_list('id', flat=True))
-        return queryset.filter(Exists(eav_subquery))
+        return queryset.filter(eav_subquery)
 
     def filter_by_latest_price(self, queryset, name, value):
         # Подзапрос для получения последней цены для каждого продукта
