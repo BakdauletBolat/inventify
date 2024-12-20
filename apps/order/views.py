@@ -8,7 +8,7 @@ from rest_framework.response import Response
 
 from apps.order import models, serializers
 from apps.order.actions import OrderAction
-from apps.order.enums import OrderStatusChoices
+from apps.order.enums import OrderStatusChoices, PaymentStatusChoices
 
 
 class OrderViewSet(viewsets.ModelViewSet):
@@ -87,5 +87,7 @@ class OrderConfirmView(generics.GenericAPIView):
                          )
     def post(self, request, *args, **kwargs):
         instance = self.get_object()
+        if instance.payment_status != PaymentStatusChoices.PAID:
+            raise ValidationError(_('Вы не можете завершить заказ, который не оплачен'))
         order = OrderAction().confirm(instance)
         return Response(self.serializer_class(order).data)

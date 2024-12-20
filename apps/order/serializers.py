@@ -60,7 +60,6 @@ class OrderSerializer(serializers.ModelSerializer):
 
 
 class OrderUpdateSerializer(OrderSerializer):
-    status = serializers.ChoiceField(choices=OrderStatusChoices.choices, required=False)
     payment_status = serializers.ChoiceField(choices=PaymentStatusChoices.choices, required=False)
     delivery_type_id = serializers.ChoiceField(required=False,
                                                choices=DeliveryTypeChoices.choices,
@@ -80,7 +79,6 @@ class OrderUpdateSerializer(OrderSerializer):
             'delivery_type_id',
             'warehouse_id',
             'comment',
-            'status',
             'payment_status'
         )
 
