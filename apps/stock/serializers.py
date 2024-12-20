@@ -41,10 +41,16 @@ class WareHouseSerializer(serializers.ModelSerializer):
 
 
 class WarehouseDetailSerializer(WareHouseSerializer):
-    products = serializers.ListSerializer(child=product_serializers.ProductListSerializerV2(), read_only=True)
+    products = serializers.SerializerMethodField(read_only=True)
 
     class Meta(WareHouseSerializer.Meta):
-        fields = WareHouseSerializer.Meta.fields + ('products', )
+        fields = WareHouseSerializer.Meta.fields + ('products',)
+
+    def get_products(self, instance: models.Warehouse):
+        return product_serializers.ProductListSerializerV2(instance.products.filter(status__in=[
+            StatusChoices.IN_STOCK,
+            StatusChoices.RESERVED
+        ]), many=True).data
 
 
 class StockReceiptSerializer(serializers.ModelSerializer):

@@ -1,12 +1,13 @@
-from django.core import exceptions
 from django.db import transaction
 from django.utils.translation import gettext as _
 from rest_framework import status, generics, viewsets
-from rest_framework.exceptions import ValidationError, MethodNotAllowed
+from rest_framework.decorators import action
+from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
 
 from apps.order import models, serializers
-from apps.order.enums import PaymentStatusChoices, OrderStatusChoices
+from apps.order.actions import OrderAction
+from apps.order.enums import OrderStatusChoices
 
 
 class OrderViewSet(viewsets.ModelViewSet):
@@ -15,23 +16,46 @@ class OrderViewSet(viewsets.ModelViewSet):
 
     @transaction.atomic
     def create(self, request, *args, **kwargs):
-        try:
-            return super().create(request, *args, **kwargs)
-        except exceptions.ValidationError as e:
-            return Response({'detail': e.message}, status=status.HTTP_422_UNPROCESSABLE_ENTITY)
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        with transaction.atomic():
+            order = OrderAction(serializer.validated_data).create()
+
+        return Response(self.serializer_class(order).data, status=status.HTTP_201_CREATED)
 
     @transaction.atomic
     def destroy(self, request, *args, **kwargs):
         instance = self.get_object()
-        if instance.status == OrderStatusChoices.COMPLETED:
+        if instance.status != OrderStatusChoices.PROCESSING:
             raise ValidationError(_('Вы не можете удалить проведенный заказ'))
-        instance.status = OrderStatusChoices.CANCELED
-        instance.payment_status = PaymentStatusChoices.FAILED
-        instance.save()
+
+        with transaction.atomic():
+            OrderAction().delete(instance)
         return Response(status=status.HTTP_204_NO_CONTENT)
 
     def update(self, request, *args, **kwargs):
-        raise MethodNotAllowed(method='PATCH')
+        with transaction.atomic():
+            partial = kwargs.pop('partial', False)
+            instance = self.get_object()
+            serializer = serializers.OrderUpdateSerializer(instance, data=request.data, partial=partial)
+            serializer.is_valid(raise_exception=True)
+            self.perform_update(serializer)
+
+            if getattr(instance, '_prefetched_objects_cache', None):
+                instance._prefetched_objects_cache = {}
+
+            return Response(self.serializer_class(instance).data)
+
+    @action(detail=False, methods=['post'], url_path='refund')
+    def refund(self, request, *args, **kwargs):
+        serializer = serializers.OrderRefundSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        data = serializer.validated_data
+        if data['refund_order'].status != OrderStatusChoices.COMPLETED:
+            raise ValidationError(_('Вы не можете вернуть заказ, который не завершен'))
+        with transaction.atomic():
+            order = OrderAction(data).refund()
+            return Response(self.serializer_class(order).data)
 
 
 class OrderConfirmView(generics.GenericAPIView):
@@ -40,6 +64,5 @@ class OrderConfirmView(generics.GenericAPIView):
 
     def post(self, request, *args, **kwargs):
         instance = self.get_object()
-        instance.update_order_status_success()
-        serializer = self.get_serializer(instance)
-        return Response(serializer.data)
+        order = OrderAction().confirm(instance)
+        return Response(self.serializer_class(order).data)

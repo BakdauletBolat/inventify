@@ -9,5 +9,5 @@ router.register('', views.OrderViewSet)
 urlpatterns = router.urls
 
 urlpatterns += [
-    path('<int:pk>/confirm/', views.OrderConfirmView.as_view())
+    path('<int:pk>/confirm/', views.OrderConfirmView.as_view()),
 ]

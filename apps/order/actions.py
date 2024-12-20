@@ -1,7 +1,14 @@
+from typing import List
+
+from django.core.exceptions import ValidationError
 from django.db.utils import DataError
+from django.utils.translation import gettext as _
 
 from apps.order.enums import *
 from apps.order.models import Order, OrderItem
+from apps.product.enums import StatusChoices
+from apps.product.models.Product import Product
+from apps.stock.actions import StockAction
 
 
 class ImportOrderAction:
@@ -35,3 +42,98 @@ class ImportOrderAction:
                     order=order,
                     is_returning=True if item['returning'] is True else False
                 )
+
+
+class OrderAction:
+
+    def __init__(self, data=None):
+        if data is None:
+            data = {}
+        self.data = data
+        self.goods = self.data.pop('goods', [])
+
+    def create(self):
+        self.set_total()
+        order = Order.objects.create(**self.data)
+        self.__create_order_items(order)
+        products = [item['product'] for item in self.goods]
+        self._update_status_products(StatusChoices.RESERVED, products)
+        return order
+
+    def outgoing_order(self, products: List[Product]):
+        stock = StockAction()
+        for product in products:
+            stock.process_outgoing(product, product.warehouse, 1)
+
+    def ingoing_order(self, products: List[Product]):
+        stock = StockAction()
+        for product in products:
+            stock.process_ingoing(product, product.warehouse, 1)
+
+    def delete(self, order: Order):
+        self.__update_order_status_failure(order)
+        products = list(Product.objects.filter(order_item__order=order))
+        self._update_status_products(StatusChoices.IN_STOCK, products)
+        order.save()
+
+    def refund(self):
+        self.set_total()
+        order = Order.objects.create(**self.data)
+        self.__create_order_items(order)
+        products = list(Product.objects.filter(order_item__order=order))
+        self._update_status_products(StatusChoices.IN_STOCK, products)
+        self.__update_order_status_refunded(order)
+        self.ingoing_order(products)
+        return order
+
+    def confirm(self, order: Order):
+        self.__update_order_status_success(order)
+        products = list(Product.objects.filter(order_item__order=order))
+        self._update_status_products(StatusChoices.SOLD, products)
+        self.outgoing_order(products)
+        return order
+
+    def set_total(self) -> None:
+        self.data['total'] = sum(list(
+            map(
+                lambda x: getattr(x['product'].price.last(), 'cost', 0) * x['quantity'], self.goods
+            )
+        ))
+
+    def _update_status_products(self, status: StatusChoices, items: List[Product]):
+        products = []
+        for item in items:
+            item.status = status
+            products.append(item)
+
+        Product.objects.bulk_update(products, ['status'])
+
+    def __create_order_items(self, order: Order):
+        for item in self.goods:
+            item['order_id'] = order.id
+            OrderItem.objects.create(**item)
+
+    @staticmethod
+    def __update_order_status_success(order: Order):
+        if order.payment_status == PaymentStatusChoices.PAID \
+                and order.payment_type == PaymentTypeChoices.INTERNET_PAYMENT:
+            order.status = OrderStatusChoices.COMPLETED
+
+        elif order.payment_type == PaymentTypeChoices.CASH:
+            order.status = OrderStatusChoices.COMPLETED
+            order.payment_status = PaymentStatusChoices.PAID
+            order.save()
+        else:
+            raise ValidationError(_('Заказ не оплачен, либо отклонен'))
+
+    @staticmethod
+    def __update_order_status_failure(order: Order):
+        order.status = OrderStatusChoices.CANCELED
+        order.payment_status = PaymentStatusChoices.FAILED
+        order.save()
+
+    @staticmethod
+    def __update_order_status_refunded(order: Order):
+        order.status = OrderStatusChoices.REFUNDED
+        order.payment_status = PaymentStatusChoices.PAID
+        order.save()

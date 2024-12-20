@@ -5,10 +5,10 @@ from django.utils.translation import gettext as _
 
 from apps.address.models import Address
 from apps.order.enums import *
+from apps.product.enums import StatusChoices
 from apps.product.models import Product
 from apps.stock.models import Stock, Warehouse
 from base import models as base_models
-from apps.product.enums import StatusChoices
 
 
 def default_uuid():
@@ -37,41 +37,16 @@ class Order(base_models.BaseModel):
     status = models.IntegerField(choices=OrderStatusChoices.choices, default=OrderStatusChoices.PROCESSING)
     payment_status = models.IntegerField(choices=PaymentStatusChoices.choices, default=PaymentStatusChoices.PENDING)
 
-    def update_payment_success(self):
-        self.payment_status = PaymentStatusChoices.PAID
-        self.save()
-
-    def update_payment_failure(self):
-        self.payment_status = PaymentStatusChoices.FAILED
-        self.save()
-
-    def update_order_status_success(self):
-        if self.payment_status == PaymentStatusChoices.PAID \
-                and self.payment_type == PaymentTypeChoices.INTERNET_PAYMENT:
-            self.status = OrderStatusChoices.COMPLETED
-
-        elif self.payment_type == PaymentTypeChoices.CASH:
-            self.status = OrderStatusChoices.COMPLETED
-            self.update_payment_success()
-
-        else:
-            raise ValidationError(_('Заказ не оплачен, либо отклонен'))
-        self.save()
-
-    def update_order_status_cancel(self):
-        self.status = OrderStatusChoices.CANCELED
-        self.save()
-
     class Meta:
         verbose_name = _('Заказ')
         verbose_name_plural = _('Заказы')
 
     def __str__(self):
-        return f"{self.id} - {self.warehouse.name}"
+        return f"{self.id}"
 
 
 class OrderItem(models.Model):
-    product = models.ForeignKey(Product, on_delete=models.CASCADE)
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='order_item')
     quantity = models.PositiveIntegerField(default=1)
     order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name='goods')
     is_returning = models.BooleanField(default=False)
