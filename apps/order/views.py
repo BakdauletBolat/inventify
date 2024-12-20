@@ -1,5 +1,6 @@
 from django.db import transaction
 from django.utils.translation import gettext as _
+from drf_yasg.utils import swagger_auto_schema
 from rest_framework import status, generics, viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError
@@ -14,7 +15,11 @@ class OrderViewSet(viewsets.ModelViewSet):
     queryset = models.Order.objects.all()
     serializer_class = serializers.OrderSerializer
 
-    @transaction.atomic
+    @swagger_auto_schema(responses={200: serializers.OrderSerializer},
+                         request_body=serializers.OrderUpdateSerializer,
+                         operation_id='Создание заказа',
+                         tags=['Заказы'],
+                         )
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -23,7 +28,11 @@ class OrderViewSet(viewsets.ModelViewSet):
 
         return Response(self.serializer_class(order).data, status=status.HTTP_201_CREATED)
 
-    @transaction.atomic
+    @swagger_auto_schema(responses={200: serializers.OrderSerializer},
+                         request_body=serializers.OrderUpdateSerializer,
+                         operation_id='Удалить',
+                         tags=['Заказы'],
+                         )
     def destroy(self, request, *args, **kwargs):
         instance = self.get_object()
         if instance.status != OrderStatusChoices.PROCESSING:
@@ -33,6 +42,11 @@ class OrderViewSet(viewsets.ModelViewSet):
             OrderAction().delete(instance)
         return Response(status=status.HTTP_204_NO_CONTENT)
 
+    @swagger_auto_schema(responses={200: serializers.OrderSerializer},
+                         request_body=serializers.OrderUpdateSerializer,
+                         operation_id='Обновить',
+                         tags=['Заказы'],
+                         )
     def update(self, request, *args, **kwargs):
         with transaction.atomic():
             partial = kwargs.pop('partial', False)
@@ -46,6 +60,11 @@ class OrderViewSet(viewsets.ModelViewSet):
 
             return Response(self.serializer_class(instance).data)
 
+    @swagger_auto_schema(responses={200: serializers.OrderSerializer},
+                         request_body=serializers.OrderRefundSerializer,
+                         operation_id='Возврат',
+                         tags=['Заказы'],
+                         )
     @action(detail=False, methods=['post'], url_path='refund')
     def refund(self, request, *args, **kwargs):
         serializer = serializers.OrderRefundSerializer(data=request.data)
@@ -62,6 +81,10 @@ class OrderConfirmView(generics.GenericAPIView):
     queryset = models.Order.objects.filter(status=OrderStatusChoices.PROCESSING)
     serializer_class = serializers.OrderSerializer
 
+    @swagger_auto_schema(responses={200: serializers.OrderSerializer},
+                         operation_id='Завершение заказа',
+                         tags=['Заказы'],
+                         )
     def post(self, request, *args, **kwargs):
         instance = self.get_object()
         order = OrderAction().confirm(instance)
