@@ -5,9 +5,9 @@ from apps.product import views
 ## Для админки
 
 urlpatterns = [
-    path('', include([
-        path('image/', views.AdminProductImageView.as_view(), name='create_image'),
-        path('image/<int:pk>/', views.AdminProductImageView.as_view(), name='delete_image'),
+    path('image/', views.AdminProductImageView.as_view(), name='create_image'),
+    path('image/<int:pk>/', views.AdminProductImageView.as_view(), name='delete_image'),
+    path('v2/product/', include([
         path('', views.AdminProductViewSetV2.as_view({'get': 'list'})),
         path('create/', views.AdminProductViewSetV2.as_view({'post': 'create'})),
         path('<int:pk>/', views.AdminProductViewSetV2.as_view({'get': 'retrieve'})),
