@@ -25,7 +25,7 @@ class DynamicProductFilterSet(django_filters.FilterSet):
 
     class Meta:
         model = Product
-        fields = []
+        fields = '__all__'
 
     @staticmethod
     def filter_by_product_or_category_name(queryset: QuerySet, name, value):
