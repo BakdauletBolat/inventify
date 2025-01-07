@@ -1,5 +1,6 @@
 from django.db import transaction
 from django.utils.translation import gettext as _
+from django_filters.rest_framework import DjangoFilterBackend
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework import status, generics, viewsets
 from rest_framework.decorators import action
@@ -9,11 +10,14 @@ from rest_framework.response import Response
 from apps.order import models, serializers
 from apps.order.actions import OrderAction
 from apps.order.enums import OrderStatusChoices, PaymentStatusChoices
+from apps.order.filters import OrderFilter
 
 
 class OrderViewSet(viewsets.ModelViewSet):
-    queryset = models.Order.objects.all()
+    queryset = models.Order.objects.all().order_by('-id')
     serializer_class = serializers.OrderSerializer
+    filter_backends = [DjangoFilterBackend]
+    filterset_class = OrderFilter
 
     @swagger_auto_schema(responses={200: serializers.OrderSerializer},
                          request_body=serializers.OrderUpdateSerializer,
