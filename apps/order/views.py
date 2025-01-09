@@ -14,7 +14,7 @@ from apps.order.filters import OrderFilter
 
 
 class OrderViewSet(viewsets.ModelViewSet):
-    queryset = models.Order.objects.all().order_by('-id')
+    queryset = models.Order.objects.all().order_by('-created_at')
     serializer_class = serializers.OrderSerializer
     filter_backends = [DjangoFilterBackend]
     filterset_class = OrderFilter
@@ -82,7 +82,7 @@ class OrderViewSet(viewsets.ModelViewSet):
 
 
 class OrderConfirmView(generics.GenericAPIView):
-    queryset = models.Order.objects.filter(status=OrderStatusChoices.PROCESSING).order_by('-created_at')
+    queryset = models.Order.objects.filter(status=OrderStatusChoices.PROCESSING)
     serializer_class = serializers.OrderSerializer
 
     @swagger_auto_schema(responses={200: serializers.OrderSerializer},
