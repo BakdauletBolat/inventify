@@ -82,7 +82,7 @@ class OrderViewSet(viewsets.ModelViewSet):
 
 
 class OrderConfirmView(generics.GenericAPIView):
-    queryset = models.Order.objects.filter(status=OrderStatusChoices.PROCESSING)
+    queryset = models.Order.objects.filter(status=OrderStatusChoices.PROCESSING).order_by('-created_at')
     serializer_class = serializers.OrderSerializer
 
     @swagger_auto_schema(responses={200: serializers.OrderSerializer},
