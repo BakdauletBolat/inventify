@@ -137,7 +137,12 @@ class ProductImageAdmin(admin.ModelAdmin):
     raw_id_fields = ('product',)
 
 
-admin.site.register(Price)
+class PriceAdmin(DjangoQLSearchMixin, admin.ModelAdmin):
+    raw_id_fields = ('product',)
+    list_display = ('cost', 'product')
+
+
+admin.site.register(Price, PriceAdmin)
 admin.site.register(Product, ProductAdmin)
 admin.site.register(ImportProductData, ImportProductAdmin)
 admin.site.register(ProductImage, ProductImageAdmin)

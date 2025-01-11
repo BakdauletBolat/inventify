@@ -3,6 +3,7 @@ from celery import shared_task
 from apps.product.enums import StatusChoices
 from apps.product.models import Product
 from apps.product.models.ImportProductData import ImportProductData
+from apps.product.models.Price import Price
 from base.requests import RecarRequest
 
 
@@ -57,6 +58,26 @@ def update_status_products():
     Product.objects.filter(id__in=get_products_id(products_in_stock)).update(status=StatusChoices.IN_STOCK)
     Product.objects.filter(id__in=get_products_id(products_sold)).update(status=StatusChoices.SOLD)
     Product.objects.filter(id__in=get_products_id(products_deleted)).update(status=StatusChoices.DELETED)
+
+
+# @shared_task
+def update_price():
+    products_recar = RecarRequest().get_products()
+    prices = []
+    prices_with_id = Price.objects.values('id', 'product_id')
+    for product in products_recar:
+
+        try:
+            price_id = next(filter(lambda x: x['product_id'] == int(product['id']), prices_with_id))
+        except StopIteration:
+            continue
+
+        prices.append(Price(
+            id=price_id['id'],
+            cost=0 if product.get('price') is None else int(product.get('price')),
+        ))
+
+    Price.objects.bulk_update(prices, ['cost'])
 
 
 def get_products_id(products: list):

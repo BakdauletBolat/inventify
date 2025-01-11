@@ -28,8 +28,14 @@ class ModificationDraftAdmin(admin.ModelAdmin):
     }
 
 
+class EngineAdmin(admin.ModelAdmin):
+    search_fields = ('name',)
+    raw_id_fields = ('modification',)
+    search_fields = ('name', )
+
+
 admin.site.register(Modification, ModificationAdmin)
 admin.site.register(ModelCar, ModelCarAdmin)
-admin.site.register(Engine)
+admin.site.register(Engine, EngineAdmin)
 admin.site.register(ManufacturerType, ManufacturerTypeAdmin)
 admin.site.register(ModificationDraft, ModificationDraftAdmin)

@@ -42,6 +42,11 @@ app.conf.beat_schedule = {
         'schedule': crontab(hour=00, minute=30)
     },
 
+    'Обновление цен продуктов': {
+        'task': 'apps.product.tasks.update_price',
+        'schedule': crontab(hour=00, minute=40)
+    },
+
     'Импорт заказов': {
         'task': 'apps.order.tasks.import_orders_from_recar',
         'schedule': crontab(hour=2, minute=00)

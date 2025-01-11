@@ -9,6 +9,7 @@ from rest_framework.viewsets import ModelViewSet
 
 from apps.product import deserializers, serializers
 from apps.product.actions import ProductAction
+from apps.product.enums import StatusChoices
 from apps.product.filters import DynamicProductFilterSet
 from apps.product.models.Price import Price
 from apps.product.models.Product import Product, ProductImage
@@ -119,16 +120,14 @@ class ProductViewSet(ModelViewSet):
                                                 'pictures',
                                                 'eav_values'
                                                 ).select_related(
-        'category', 'warehouse').all().order_by('-created_at')
+        'category', 'warehouse').all()
     filter_backends = [DjangoFilterBackend]
     filterset_class = DynamicProductFilterSet
 
     def list(self, request, *args, **kwargs):
         queryset = self.filter_queryset(
             self.get_queryset()
-        )
-        latest_price = Price.objects.filter(product=OuterRef('pk')).order_by('-created_at')
-        queryset = queryset.annotate(latest_price=Subquery(latest_price.values('cost')[:1]))
+        ).filter(status=StatusChoices.IN_STOCK)
         list_serializer = serializers.ProductListSerializerV2
 
         page = self.paginate_queryset(queryset)

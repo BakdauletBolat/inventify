@@ -3,6 +3,7 @@ from django.conf.urls.static import static
 from django.contrib import admin
 from django.urls import path, include
 
+from base.views import DashBoardView
 from inventify.yasg import urlpatterns as yasg_urlpatterns
 
 urlpatterns = yasg_urlpatterns + [
@@ -16,6 +17,9 @@ urlpatterns = yasg_urlpatterns + [
         path('stock/', include('apps.stock.urls')),
         path('orders/', include('apps.order.urls')),
         path('handbook/', include('handbook.urls')),
+        path('dashboard-info/', DashBoardView.as_view()),
+        path('feedback/', include('apps.feedback.urls'))
+
     ])),
     path('api/v2/', include([
         path('product/', include('apps.product.routes.client')),
@@ -28,6 +32,7 @@ urlpatterns = yasg_urlpatterns + [
         path('stock/', include('apps.stock.urls')),
         path('orders/', include('apps.order.urls')),
         path('handbook/', include('handbook.urls')),
+        path('feedback/', include('apps.feedback.urls'))
     ]))
 ]
 urlpatterns += yasg_urlpatterns

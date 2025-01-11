@@ -1,6 +1,7 @@
 from eav.models import Attribute
 from rest_framework.exceptions import ValidationError, APIException
 
+from apps.product.enums import StatusChoices
 from apps.product.models import Product
 from apps.product.models.Price import Price
 from apps.product.models.Product import ProductDetail
@@ -78,3 +79,7 @@ class ProductRepository(BaseRepository):
         if len(codes):
             instance.code.set(codes)
         return instance
+
+    @staticmethod
+    def get_in_stock():
+        return Product.objects.filter(status=StatusChoices.IN_STOCK)

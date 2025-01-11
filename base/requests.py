@@ -193,7 +193,7 @@ class RecarRequest(Request):
                 "page": "1",
                 "size": "200000"
             },
-            "query": "query FetchParts($payload: GetPartsInput, $size: Int, $page: Int) {\n  parts(payload: $payload, size: $size, page: $page) {\n    nodes {\n      id\n                                         __typename\n    }\n    __typename\n  }\n}\n"
+            "query": "query FetchParts($payload: GetPartsInput, $size: Int, $page: Int) {\n  parts(payload: $payload, size: $size, page: $page) {\n    nodes {\n      id\n   __typename\n price }\n    __typename\n  }\n}\n"
         }
         response = self.post(data)
         return response['data']['parts']['nodes']
