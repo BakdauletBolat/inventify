@@ -90,8 +90,9 @@ class OrderConfirmView(generics.GenericAPIView):
                          tags=['Заказы'],
                          )
     def post(self, request, *args, **kwargs):
-        instance = self.get_object()
-        if instance.payment_status != PaymentStatusChoices.PAID:
-            raise ValidationError(_('Вы не можете завершить заказ, который не оплачен'))
-        order = OrderAction().confirm(instance)
+        with transaction.atomic():
+            instance = self.get_object()
+            if instance.payment_status != PaymentStatusChoices.PAID:
+                raise ValidationError(_('Вы не можете завершить заказ, который не оплачен'))
+            order = OrderAction().confirm(instance)
         return Response(self.serializer_class(order).data)
