@@ -35,7 +35,7 @@ class OrderItemSerializer(serializers.ModelSerializer):
 
 class OrderSerializer(serializers.ModelSerializer):
     uuid = serializers.UUIDField(read_only=True)
-    goods = OrderItemSerializer(many=True)
+    goods = OrderItemSerializer(many=True, required=True)
     total = serializers.DecimalField(read_only=True, max_digits=10, decimal_places=2)
     delivery_type_id = serializers.ChoiceField(write_only=True,
                                                choices=DeliveryTypeChoices.choices,

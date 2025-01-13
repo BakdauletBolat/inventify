@@ -89,8 +89,8 @@ class OrderAction:
     def confirm(self, order: Order):
         self.__update_order_status_success(order)
         products = list(Product.objects.filter(order_item__order=order))
-        self._update_status_products(StatusChoices.SOLD, products)
         self.outgoing_order(products)
+        self._update_status_products(StatusChoices.SOLD, products)
         return order
 
     def set_total(self) -> None:
