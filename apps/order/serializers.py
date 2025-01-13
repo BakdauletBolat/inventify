@@ -88,7 +88,7 @@ class OrderUpdateSerializer(OrderSerializer):
         if order_status == OrderStatusChoices.COMPLETED and payment_status != PaymentStatusChoices.PAID:
             raise ValidationError(_('Для завершения заказа, оплатите сумму'))
 
-        super().validate(attrs)
+        return attrs
 
 
 class OrderRefundSerializer(serializers.ModelSerializer):
