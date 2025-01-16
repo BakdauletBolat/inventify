@@ -5,11 +5,14 @@ from rest_framework_simplejwt.views import (
 )
 
 from users import views
+from users.otp import views as otp_views
 
 jwt_url = [
     path('token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
-    path('me/', views.UsersMe.as_view(), name='me')
+    path('me/', views.UsersMe.as_view(), name='me'),
+    path('otp/', otp_views.UserOTPView.as_view({'post': 'register'}), name='user_otp_register'),
+    path('otp/token/', otp_views.UserOTPView.as_view({'post': 'verify'}), name='user_otp_verify')
 ]
 
 user_url = [

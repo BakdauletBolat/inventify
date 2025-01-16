@@ -9,6 +9,7 @@ from apps.order.models import Order, OrderItem
 from apps.product.enums import StatusChoices
 from apps.product.models.Product import Product
 from apps.stock.actions import StockAction
+from apps.stock.models import Warehouse
 
 
 class ImportOrderAction:
@@ -65,10 +66,10 @@ class OrderAction:
         for product in products:
             stock.process_outgoing(product, product.warehouse, 1)
 
-    def ingoing_order(self, products: List[Product]):
+    def ingoing_order(self, products: List[Product], warehouse: Warehouse):
         stock = StockAction()
         for product in products:
-            stock.process_ingoing(product, product.warehouse, 1)
+            stock.process_ingoing(product, warehouse, 1)
 
     def delete(self, order: Order):
         self.__update_order_status_failure(order)
@@ -80,10 +81,11 @@ class OrderAction:
         self.set_total()
         order = Order.objects.create(**self.data)
         self.__create_order_items(order)
-        products = list(Product.objects.filter(order_item__order=order))
-        self._update_status_products(StatusChoices.IN_STOCK, products)
+        products = Product.objects.filter(order_item__order=order)
+        self.__set_is_returning_products(order.refund_order)
+        self._update_status_products(StatusChoices.IN_STOCK, list(products))
         self.__update_order_status_refunded(order)
-        self.ingoing_order(products)
+        self.ingoing_order(products, order.warehouse)
         return order
 
     def confirm(self, order: Order):
@@ -118,6 +120,7 @@ class OrderAction:
         if order.payment_status == PaymentStatusChoices.PAID \
                 and order.payment_type == PaymentTypeChoices.INTERNET_PAYMENT:
             order.status = OrderStatusChoices.COMPLETED
+            order.save()
 
         elif order.payment_type == PaymentTypeChoices.CASH:
             order.status = OrderStatusChoices.COMPLETED
@@ -137,3 +140,8 @@ class OrderAction:
         order.status = OrderStatusChoices.REFUNDED
         order.payment_status = PaymentStatusChoices.PAID
         order.save()
+
+    def __set_is_returning_products(self, order: Order):
+        products = [item['product'] for item in self.goods]
+        order_items = OrderItem.objects.filter(product__in=products, order=order)
+        order_items.update(is_returning=True)

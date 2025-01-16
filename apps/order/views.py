@@ -39,7 +39,9 @@ class OrderViewSet(viewsets.ModelViewSet):
                          )
     def destroy(self, request, *args, **kwargs):
         instance = self.get_object()
-        if instance.status != OrderStatusChoices.PROCESSING:
+        if instance.status == OrderStatusChoices.CANCELED:
+            raise ValidationError(_('Заказ уже отменен'))
+        if instance.status == OrderStatusChoices.COMPLETED:
             raise ValidationError(_('Вы не можете удалить проведенный заказ'))
 
         with transaction.atomic():
