@@ -12,7 +12,7 @@ from apps.product.actions import ProductAction
 from apps.product.enums import StatusChoices
 from apps.product.filters import DynamicProductFilterSet
 from apps.product.models.Price import Price
-from apps.product.models.Product import Product, ProductImage
+from apps.product.models.Product import Product, ProductImage, ProductView
 from apps.product.serializers import AssignWarehouseSerializer
 from base.paginations import CustomPageNumberPagination
 from base.views import BaseAPIView
@@ -123,6 +123,7 @@ class ProductViewSet(ModelViewSet):
         'category', 'warehouse').all()
     filter_backends = [DjangoFilterBackend]
     filterset_class = DynamicProductFilterSet
+    pagination_class = CustomPageNumberPagination
 
     def list(self, request, *args, **kwargs):
         queryset = self.filter_queryset(
@@ -136,4 +137,10 @@ class ProductViewSet(ModelViewSet):
             return self.get_paginated_response(serializer.data)
 
         serializer = list_serializer(queryset, many=True, context={"request": request})
+        return Response(serializer.data)
+
+    def retrieve(self, request, *args, **kwargs):
+        instance = self.get_object()
+        ProductView().increment_product_view(instance)
+        serializer = self.get_serializer(instance)
         return Response(serializer.data)

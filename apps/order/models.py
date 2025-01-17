@@ -9,6 +9,7 @@ from apps.product.enums import StatusChoices
 from apps.product.models import Product
 from apps.stock.models import Stock, Warehouse
 from base import models as base_models
+from users.models.User import User
 
 
 def default_uuid():
@@ -26,6 +27,7 @@ class Order(base_models.BaseModel):
     discount = models.IntegerField(default=0)
     warehouse = models.ForeignKey(Warehouse, on_delete=models.SET_NULL, null=True, blank=True)
     client = models.CharField(default='', null=True, blank=True, max_length=255)
+    user = models.ForeignKey(User, null=True, blank=True, on_delete=models.CASCADE)
     refund_order = models.ForeignKey('self', null=True, blank=True, related_name='refunds', on_delete=models.CASCADE)
 
     # Поля для данных клиента

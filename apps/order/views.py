@@ -20,20 +20,20 @@ class OrderViewSet(viewsets.ModelViewSet):
     filterset_class = OrderFilter
 
     @swagger_auto_schema(responses={200: serializers.OrderSerializer},
-                         request_body=serializers.OrderUpdateSerializer,
+                         request_body=serializers.OrderSerializer,
                          operation_id='Создание заказа',
                          tags=['Заказы'],
                          )
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
+        serializer.validated_data['user'] = request.user
         with transaction.atomic():
             order = OrderAction(serializer.validated_data).create()
 
         return Response(self.serializer_class(order).data, status=status.HTTP_201_CREATED)
 
     @swagger_auto_schema(responses={200: serializers.OrderSerializer},
-                         request_body=serializers.OrderUpdateSerializer,
                          operation_id='Удалить',
                          tags=['Заказы'],
                          )

@@ -48,6 +48,24 @@ class Product(BaseModel):
         verbose_name_plural = 'Продукты'
 
 
+class ProductView(models.Model):
+    product = models.OneToOneField(Product, on_delete=models.CASCADE, related_name="view_data")
+    views_count = models.PositiveIntegerField(default=0)  # Количество просмотров
+
+    def increment_product_view(self, product):
+        """Увеличивает счетчик просмотров для продукта."""
+        product_view, created = ProductView.objects.get_or_create(product=product)
+        product_view.views_count += 1
+        product_view.save()
+
+    def __str__(self):
+        return f"{self.product.name} - {self.views_count}"
+
+    class Meta:
+        verbose_name = 'Просмотр продукта'
+        verbose_name_plural = 'Просмотры продукта'
+
+
 class ProductDetail(models.Model):
     height = models.FloatField(verbose_name='Высота', null=True, blank=True)
     width = models.FloatField(verbose_name='Ширина', null=True, blank=True)

@@ -6,7 +6,6 @@ from django.urls import reverse
 from django.utils.html import format_html
 from django_json_widget.widgets import JSONEditorWidget
 from djangoql.admin import DjangoQLSearchMixin
-from eav.admin import BaseEntityAdmin
 from eav.forms import BaseDynamicEntityForm
 
 from apps.car.models import ModelCar, Engine
@@ -144,6 +143,7 @@ class PriceAdmin(DjangoQLSearchMixin, admin.ModelAdmin):
 
 admin.site.register(Price, PriceAdmin)
 admin.site.register(Product, ProductAdmin)
+admin.site.register(ProductView)
 admin.site.register(ImportProductData, ImportProductAdmin)
 admin.site.register(ProductImage, ProductImageAdmin)
 admin.site.register(ProductDetail)

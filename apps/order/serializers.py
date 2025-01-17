@@ -9,6 +9,7 @@ from apps.product.models import Product
 from apps.product.serializers import ProductSerializer
 from apps.stock.models import Warehouse
 from apps.stock.serializers import QualitySerializer, WareHouseSerializer
+from users.serializers import UserSerializer
 
 
 class OrderItemSerializer(serializers.ModelSerializer):
@@ -53,6 +54,7 @@ class OrderSerializer(serializers.ModelSerializer):
                                                       source='warehouse',
                                                       allow_null=True)
     warehouse = WareHouseSerializer(read_only=True)
+    user = UserSerializer(read_only=True)
 
     class Meta:
         fields = '__all__'

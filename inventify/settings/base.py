@@ -150,7 +150,8 @@ REST_FRAMEWORK = {
     'DEFAULT_PAGINATION_CLASS': 'base.paginations.CustomPageNumberPagination',
     'PAGE_SIZE': 100,
     "DEFAULT_AUTHENTICATION_CLASSES": (
-        "rest_framework_simplejwt.authentication.JWTAuthentication",
+        # "rest_framework_simplejwt.authentication.JWTAuthentication",
+        "base.middlewares.BaseAuthMiddleware.CustomJWTAuthentication",
     ),
     'DEFAULT_FILTER_BACKENDS': (
         'rest_framework.filters.OrderingFilter',
