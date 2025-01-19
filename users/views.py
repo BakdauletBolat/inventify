@@ -57,7 +57,7 @@ class UserViewSet(viewsets.ModelViewSet):
         orders = Order.objects.filter(user=instance).order_by('-created_at')
         page = self.paginate_queryset(orders)
         if page is not None:
-            serializer = OrderSerializer(page, many=True)
+            serializer = OrderSerializer(page, many=True, context={"request": request})
             return self.get_paginated_response(serializer.data)
 
         serializer = OrderSerializer(orders, many=True)
