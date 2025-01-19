@@ -1,6 +1,7 @@
 from rest_framework import permissions
 from rest_framework import status
 from rest_framework import viewsets
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -22,6 +23,8 @@ class UserViewSet(viewsets.ModelViewSet):
         """
         if self.request.method == 'DELETE':
             return [IsDirector()]
+        if self.action == 'orders':
+            return [IsAuthenticated()]
         return super().get_permissions()
 
     def update(self, request, *args, **kwargs):
@@ -48,7 +51,9 @@ class UserViewSet(viewsets.ModelViewSet):
         return Response(Role.objects.all().values('id', 'name'), status=status.HTTP_200_OK)
 
     def orders(self, request, *args, **kwargs):
-        instance = self.get_object()
+        self.check_permissions(request)
+
+        instance = request.user
         orders = Order.objects.filter(user=instance).order_by('-created_at')
         page = self.paginate_queryset(orders)
         if page is not None:
