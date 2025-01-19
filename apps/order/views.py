@@ -6,6 +6,7 @@ from rest_framework import status, generics, viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
+from django.contrib.auth.models import AnonymousUser
 
 from apps.order import models, serializers
 from apps.order.actions import OrderAction
@@ -27,7 +28,8 @@ class OrderViewSet(viewsets.ModelViewSet):
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        serializer.validated_data['user'] = request.user
+        user = request.user if not isinstance(request.user, AnonymousUser) else None
+        serializer.validated_data['user'] = user
         with transaction.atomic():
             order = OrderAction(serializer.validated_data).create()
 

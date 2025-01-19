@@ -31,6 +31,7 @@ user_url = [
         })),
 
     path('roles/', views.UserViewSet.as_view({'get': 'roles'})),
+    path('<int:pk>/orders/', views.UserViewSet.as_view({'get': 'orders'}))
 ]
 
 urlpatterns = jwt_url + user_url

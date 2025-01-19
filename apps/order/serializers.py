@@ -36,7 +36,7 @@ class OrderItemSerializer(serializers.ModelSerializer):
 
 class OrderSerializer(serializers.ModelSerializer):
     uuid = serializers.UUIDField(read_only=True)
-    goods = OrderItemSerializer(many=True, required=True)
+    goods = OrderItemSerializer(many=True, required=True, allow_empty=False)
     total = serializers.DecimalField(read_only=True, max_digits=10, decimal_places=2)
     delivery_type_id = serializers.ChoiceField(write_only=True,
                                                choices=DeliveryTypeChoices.choices,
@@ -98,7 +98,7 @@ class OrderRefundSerializer(serializers.ModelSerializer):
                                                       queryset=Warehouse.objects.all(),
                                                       source='warehouse',
                                                       allow_null=True)
-    goods = OrderItemSerializer(many=True, context={'refund_mode': True})
+    goods = OrderItemSerializer(many=True, context={'refund_mode': True}, required=True, allow_empty=False)
     refund_order_id = serializers.PrimaryKeyRelatedField(required=True,
                                                          queryset=models.Order.objects.all(),
                                                          source='refund_order',

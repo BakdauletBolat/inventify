@@ -1,11 +1,12 @@
 from rest_framework import permissions
 from rest_framework import status
 from rest_framework import viewsets
-from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from inventify.permissions import IsManager, IsDirector
+from apps.order.models import Order
+from apps.order.serializers import OrderSerializer
+from inventify.permissions import IsDirector
 from users import serializers
 from users.actions import CreateUserAction
 from users.models.User import User, Role
@@ -45,6 +46,17 @@ class UserViewSet(viewsets.ModelViewSet):
 
     def roles(self, request, *args, **kwargs):
         return Response(Role.objects.all().values('id', 'name'), status=status.HTTP_200_OK)
+
+    def orders(self, request, *args, **kwargs):
+        instance = self.get_object()
+        orders = Order.objects.filter(user=instance).order_by('-created_at')
+        page = self.paginate_queryset(orders)
+        if page is not None:
+            serializer = OrderSerializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+
+        serializer = OrderSerializer(orders, many=True)
+        return Response(serializer.data)
 
 
 class UsersMe(APIView):
