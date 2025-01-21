@@ -1,10 +1,12 @@
 from rest_framework import permissions
 from rest_framework import status
 from rest_framework import viewsets
+from rest_framework.generics import get_object_or_404
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from apps.order.actions import OrderAction
 from apps.order.models import Order
 from apps.order.serializers import OrderSerializer
 from inventify.permissions import IsDirector
@@ -62,6 +64,13 @@ class UserViewSet(viewsets.ModelViewSet):
 
         serializer = OrderSerializer(orders, many=True)
         return Response(serializer.data)
+
+    def cancel(self, request, *args, **kwargs):
+        self.check_permissions(request)
+        instance = request.user
+        order = get_object_or_404(Order, user=instance, id=self.kwargs.get('pk'))
+        OrderAction().delete(order)
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 class UsersMe(APIView):

@@ -31,7 +31,8 @@ user_url = [
         })),
 
     path('roles/', views.UserViewSet.as_view({'get': 'roles'})),
-    path('orders/', views.UserViewSet.as_view({'get': 'orders'}))
+    path('orders/', views.UserViewSet.as_view({'get': 'orders'})),
+    path('orders/<int:pk>/cancel/', views.UserViewSet.as_view({'post': 'cancel'}))
 ]
 
 urlpatterns = jwt_url + user_url

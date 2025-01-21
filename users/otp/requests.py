@@ -10,7 +10,7 @@ class SmsRequest:
     @staticmethod
     def send_sms(phone: str, msg):
         phone = phone.split('+')[1]
-        mes = f"Ваш код: {msg}"
+        mes = f"Kaynaravto Ваш код: {msg}"
         response = requests.post(url="https://smsc.kz/sys/send.php",
                                 params={
                                     "login": os.environ.get('sms_login'),
