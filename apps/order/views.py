@@ -84,6 +84,16 @@ class OrderViewSet(viewsets.ModelViewSet):
             order = OrderAction(data).refund()
             return Response(self.serializer_class(order).data)
 
+    @action(detail=False, methods=['delete'], url_path='bulk-delete')
+    def bulk_delete(self, request):
+        order_ids = request.data.get("ids", [])
+        orders = models.Order.objects.filter(id__in=order_ids).exclude(status=OrderStatusChoices.DELETED.value)
+        if orders.exists() is False:
+            return Response({"error": "Не переданы ID заказов или удалены"}, status=status.HTTP_400_BAD_REQUEST)
+
+        deleted_count = orders.update(status=OrderStatusChoices.DELETED.value)
+        return Response({"deleted": deleted_count}, status=status.HTTP_204_NO_CONTENT)
+
 
 class OrderConfirmView(generics.GenericAPIView):
     queryset = models.Order.objects.filter(status=OrderStatusChoices.PROCESSING)

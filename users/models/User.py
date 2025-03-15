@@ -5,6 +5,7 @@ from django.db import models
 from django.db.models import IntegerChoices
 from django.utils import timezone
 
+from base.enums import StatusEnum
 from handbook.models import City
 from users import fields
 from users import managers
@@ -56,6 +57,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     is_staff = models.BooleanField(default=False)
     is_superuser = models.BooleanField(default=False)
     date_joined = models.DateTimeField(default=timezone.now)
+    status = models.IntegerField(choices=StatusEnum.choices, default=StatusEnum.ACTIVE)
 
     USERNAME_FIELD = 'phone'
 

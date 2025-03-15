@@ -1,3 +1,4 @@
+from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import permissions
 from rest_framework import status
 from rest_framework import viewsets
@@ -9,15 +10,19 @@ from rest_framework.views import APIView
 from apps.order.actions import OrderAction
 from apps.order.models import Order
 from apps.order.serializers import OrderSerializer
+from base.enums import StatusEnum
 from inventify.permissions import IsDirector
 from users import serializers
 from users.actions import CreateUserAction
+from users.filters import UserFilter
 from users.models.User import User, Role
 
 
 class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all().order_by('id')
     serializer_class = serializers.UserSerializer
+    filter_backends = [DjangoFilterBackend]
+    filterset_class = UserFilter
 
     def get_permissions(self):
         """
@@ -71,6 +76,18 @@ class UserViewSet(viewsets.ModelViewSet):
         order = get_object_or_404(Order, user=instance, id=self.kwargs.get('pk'))
         OrderAction().delete(order)
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+    def bulk_delete(self, request):
+        """ Массовое удаление пользователей """
+        self.check_permissions(request)
+
+        user_ids = request.data.get("ids", [])
+        users = User.objects.filter(id__in=user_ids, status=StatusEnum.ACTIVE.value)
+        if users.exists() is False:
+            return Response({"error": "Не переданы ID пользователей или они были удалены"}, status=status.HTTP_400_BAD_REQUEST)
+
+        deleted_count = users.update(status=StatusEnum.DELETED.value)
+        return Response({"deleted": deleted_count}, status=status.HTTP_204_NO_CONTENT)
 
 
 class UsersMe(APIView):

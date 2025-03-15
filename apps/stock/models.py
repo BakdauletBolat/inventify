@@ -5,6 +5,7 @@ from apps.category.models import Category
 from apps.product.enums import StatusChoices
 from apps.stock.enums import MovementEnum
 from base import models as base_models
+from base.enums import StatusEnum
 from handbook.models import City
 
 
@@ -24,6 +25,7 @@ class Warehouse(base_models.BaseModel):
     city = models.ForeignKey(City, on_delete=models.SET_NULL, null=True, blank=True)
     products_category = models.ManyToManyField(Category, null=True, blank=True)
     min_stock_level = models.PositiveIntegerField(default=0, null=True)
+    status = models.IntegerField(choices=StatusEnum.choices, default=StatusEnum.ACTIVE)
 
     def __str__(self):
         return self.name

@@ -1,13 +1,17 @@
 import django_filters
 from django_filters import OrderingFilter
 
-from apps.stock.models import Warehouse
 from base.enums import StatusEnum
+from users.models.User import User
 
 
-class WarehouseFilter(django_filters.FilterSet):
-    search = django_filters.CharFilter(lookup_expr='icontains', field_name='name')
+class UserFilter(django_filters.FilterSet):
     status = django_filters.ChoiceFilter(field_name="status", choices=StatusEnum.choices, empty_label=None)
+
+    class Meta:
+        model = User
+        fields = '__all__'
+
     sort = OrderingFilter(
         fields=(
             ('id', 'id'),
@@ -15,10 +19,6 @@ class WarehouseFilter(django_filters.FilterSet):
             ('status', 'status')
         )
     )
-
-    class Meta:
-        model = Warehouse
-        exclude = ('name',)
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

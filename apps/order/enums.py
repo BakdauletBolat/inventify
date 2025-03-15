@@ -23,6 +23,7 @@ class OrderStatusChoices(models.IntegerChoices):
     COMPLETED = 2, 'Завершен'
     CANCELED = 3, 'Отменен'
     REFUNDED = 4, 'Возвращен'
+    DELETED = 5, 'Удален'
 
 
 class OrderStatusChoicesRecar(models.IntegerChoices):

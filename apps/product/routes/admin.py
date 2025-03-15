@@ -9,6 +9,7 @@ urlpatterns = [
     path('image/<int:pk>/', views.AdminProductImageView.as_view(), name='delete_image'),
     path('v2/product/', include([
         path('', views.AdminProductViewSetV2.as_view({'get': 'list'})),
+        path('bulk-delete/', views.AdminProductViewSetV2.as_view({'delete': 'bulk_delete'})),
         path('create/', views.AdminProductViewSetV2.as_view({'post': 'create'})),
         path('<int:pk>/', views.AdminProductViewSetV2.as_view({'get': 'retrieve'})),
         path('<int:pk>/delete/', views.AdminProductViewSetV2.as_view({'delete': 'destroy'})),

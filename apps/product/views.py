@@ -106,6 +106,15 @@ class AdminProductViewSetV2(ModelViewSet):
                                             serializer.validated_data['warehouse'])
         return Response(status=status.HTTP_204_NO_CONTENT)
 
+    def bulk_delete(self, request, *args, **kwargs):
+        product_ids = request.data.get("ids", [])
+        products = Product.objects.filter(id__in=product_ids).exclude(status=StatusChoices.DELETED.value)
+        if products.exists() is False:
+            return Response({"error": "Не переданы ID товаров или были удалены"}, status=status.HTTP_400_BAD_REQUEST)
+
+        deleted_count = products.update(status=StatusChoices.DELETED.value)
+        return Response({"deleted": deleted_count}, status=status.HTTP_204_NO_CONTENT)
+
     def add_component(self, request, *args, **kwargs):
         pass
 

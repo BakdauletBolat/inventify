@@ -20,7 +20,7 @@ user_url = [
     path('', views.UserViewSet.as_view(
         {
             'post': 'create',
-            'get': 'list'
+            'get': 'list',
         })),
 
     path('<int:pk>/', views.UserViewSet.as_view(
@@ -29,7 +29,7 @@ user_url = [
             'patch': 'update',
             'get': 'retrieve'
         })),
-
+    path('bulk-delete/', views.UserViewSet.as_view({"delete": "bulk_delete"})),
     path('roles/', views.UserViewSet.as_view({'get': 'roles'})),
     path('orders/', views.UserViewSet.as_view({'get': 'orders'})),
     path('orders/<int:pk>/cancel/', views.UserViewSet.as_view({'post': 'cancel'}))
