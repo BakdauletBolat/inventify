@@ -17,7 +17,7 @@ class OrderItemTabularInline(admin.TabularInline):
 
 
 class OrderAdmin(DjangoQLSearchMixin, admin.ModelAdmin):
-    list_display = ('id', 'total', 'payment_type', 'payment_status', 'status')
+    list_display = ('id', 'total', 'payment_type', 'payment_status', 'status', 'created_at', )
     list_filter = ('payment_type', 'payment_status', 'status')
     inlines = [OrderItemTabularInline]
     raw_id_fields = ('warehouse', 'refund_order',)

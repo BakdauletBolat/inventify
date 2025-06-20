@@ -10,6 +10,7 @@ from apps.product.models.Price import Price
 
 
 class DynamicProductFilterSet(django_filters.FilterSet):
+    id = django_filters.NumberFilter(field_name='id')
     price = django_filters.RangeFilter(field_name='price__cost')
     category = django_filters.BaseInFilter(field_name='category__id', lookup_expr='in')
     search = django_filters.CharFilter(method='filter_by_product_or_category_name')

@@ -21,10 +21,20 @@ class WareHouseSerializer(serializers.ModelSerializer):
     categories = CategorySerializer(many=True, source='products_category', read_only=True)
     city = CitySerializer(read_only=True)
     city_id = serializers.PrimaryKeyRelatedField(queryset=City.objects.all(), write_only=True, source='city')
+    count_products = serializers.SerializerMethodField(read_only=True)
+    created_at = serializers.DateTimeField(read_only=True)
 
     class Meta:
         model = models.Warehouse
-        fields = ('id', 'name', 'categories', 'category_ids', 'city', 'city_id', 'min_stock_level')
+        fields = ('id',
+                  'name',
+                  'categories',
+                  'category_ids',
+                  'city',
+                  'city_id',
+                  'min_stock_level',
+                  'count_products',
+                  'created_at')
 
     def create(self, validated_data):
         category_ids = validated_data.pop('products_category', [])
@@ -38,6 +48,9 @@ class WareHouseSerializer(serializers.ModelSerializer):
             warehouse.products_category.set(categories)
 
         return warehouse
+
+    def get_count_products(self, obj: models.Warehouse):
+        return obj.products.count()
 
 
 class WarehouseDetailSerializer(WareHouseSerializer):

@@ -7,6 +7,7 @@ from users.models.User import User
 
 class UserFilter(django_filters.FilterSet):
     status = django_filters.ChoiceFilter(field_name="status", choices=StatusEnum.choices, empty_label=None)
+    phone = django_filters.CharFilter(lookup_expr='icontains', field_name="phone")
 
     class Meta:
         model = User

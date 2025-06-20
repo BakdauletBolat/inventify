@@ -3,6 +3,7 @@ from django.contrib.auth.password_validation import validate_password
 from rest_framework import serializers
 from rest_framework.exceptions import PermissionDenied
 
+from base.enums import StatusEnum
 from handbook.models import City
 from handbook.serializers import CitySerializer
 from users.enums import RoleEnum
@@ -33,6 +34,7 @@ class UserUpdateSerializer(UserSerializer):
                                        child=serializers.PrimaryKeyRelatedField(queryset=Role.objects.all())
                                        )
     city = serializers.PrimaryKeyRelatedField(queryset=City.objects.all(), required=False)
+    status = serializers.ChoiceField(choices=StatusEnum.choices)
 
     class Meta(UserSerializer.Meta):
         extra_kwargs = {

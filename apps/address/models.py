@@ -15,7 +15,7 @@ class Address(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='addresses', null=True, blank=True)
 
     def __str__(self):
-        return self.address
+        return f"{self.address}"
 
     class Meta:
         verbose_name = _('Адрес')

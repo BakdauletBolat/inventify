@@ -45,7 +45,7 @@ class StockAction:
         """
         return self.__process_movement(product, warehouse, MovementEnum.OUT, quantity, quality)
 
-    def process_ingoing(self, product: Product, warehouse: Warehouse, quantity: int, quality=None):
+    def process_ingoing(self, product: Product, warehouse: Warehouse, quantity: int = 1, quality=None):
         """
             Приход товар с одного склада на другой.
         """
