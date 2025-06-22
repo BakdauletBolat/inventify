@@ -20,7 +20,7 @@ class Product(BaseModel):
     market_price = models.IntegerField(default=0, verbose_name='Рыночная цена', null=True, blank=True)
 
     modification = models.ForeignKey(Modification, blank=True, null=True, on_delete=models.SET_NULL)
-    category = models.ForeignKey(Category, blank=True, null=True, on_delete=models.CASCADE)
+    category = models.ForeignKey(Category, blank=True, null=True, on_delete=models.CASCADE, related_name='products')
     color = models.ForeignKey(ColorType, null=True, blank=True, on_delete=models.CASCADE)
 
     properties = models.CharField(max_length=255, verbose_name='Свойства', null=True, blank=True)

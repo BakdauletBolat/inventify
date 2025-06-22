@@ -1,5 +1,6 @@
 from django.utils.decorators import method_decorator
 from django.views.decorators.cache import cache_page
+from django.db.models import Count, Prefetch
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.generics import ListAPIView
 from rest_framework.mixins import ListModelMixin, RetrieveModelMixin
@@ -17,10 +18,8 @@ class CategoryListAPIView(GenericViewSet, RetrieveModelMixin, ListModelMixin):
     filterset_class = CategoryFilter
 
 
-# Create your views here.
-
 class CategoryTreeAPIView(ListAPIView):
-    queryset = Category.objects.filter(parent__isnull=True).order_by('id')
+    queryset = Category.objects.filter(parent__isnull=True).order_by('-id')
     serializer_class = CategoryTreeSerializer
     filter_backends = [DjangoFilterBackend]
     filterset_class = CategoryFilter
@@ -31,4 +30,12 @@ class CategoryTreeAPIView(ListAPIView):
         return super().dispatch(*args, **kwargs)
 
     def get_queryset(self):
-        return Category.objects.filter(parent__isnull=True).prefetch_related('children').order_by('id')
+        """
+            Возвращает дерево категорий с количеством продуктов в каждой категории.
+        """
+        child_qs = Category.objects.annotate(products_count=Count('products'))
+        return (Category.objects
+                .filter(parent__isnull=True)
+                .annotate(products_count=Count('products'))
+                .prefetch_related(Prefetch('children', queryset=child_qs))
+                .order_by('-products_count', '-id'))

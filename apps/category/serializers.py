@@ -16,8 +16,10 @@ class RecursiveField(serializers.Serializer):
 
 
 class CategoryTreeSerializer(serializers.ModelSerializer):
-    children = RecursiveField(many=True, read_only=True)
+    children = RecursiveField(many=True, read_only=True, help_text="Дочерние категории")
+    products_count = serializers.IntegerField(read_only=True, 
+                                              help_text="Количество продуктов в категории")
 
     class Meta:
         model = Category
-        fields = ('id', 'name', 'parent', 'children')
+        fields = ('id', 'name', 'parent', 'children', 'products_count')
