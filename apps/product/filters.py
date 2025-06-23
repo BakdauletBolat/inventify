@@ -9,12 +9,17 @@ from apps.product.models import Product
 from apps.product.models.Price import Price
 
 
+class CharInFilter(django_filters.BaseInFilter, django_filters.CharFilter):
+    pass
+
+
 class DynamicProductFilterSet(django_filters.FilterSet):
     id = django_filters.NumberFilter(field_name='id')
     price = django_filters.RangeFilter(field_name='price__cost')
     category = django_filters.BaseInFilter(field_name='category__id', lookup_expr='in')
     search = django_filters.CharFilter(method='filter_by_product_or_category_name')
     modification = django_filters.BaseInFilter(field_name='modification__id', lookup_expr='in')
+    status = CharInFilter(field_name='status', lookup_expr='in')
 
     sort = OrderingFilter(
         fields=(

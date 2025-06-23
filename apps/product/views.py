@@ -68,7 +68,7 @@ class AdminProductViewSetV2(ModelViewSet):
     def list(self, request, *args, **kwargs):
         queryset = self.filter_queryset(
             self.get_queryset()
-        )
+        ).exclude(status=StatusChoices.DELETED)
         latest_price = Price.objects.filter(product=OuterRef('pk')).order_by('-created_at')
         queryset = queryset.annotate(latest_price=Subquery(latest_price.values('cost')[:1]))
         list_serializer = serializers.ProductListSerializerV2
