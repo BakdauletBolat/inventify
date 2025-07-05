@@ -5,7 +5,7 @@ from django.core.cache import cache
 class Request:
     cache_key = 'access_token'
     cache_timeout = 3500
-    url = "https://prod.internal.recar.lt/graphql"
+    url = "https://backend.recar.lt/graphql"
 
     def get_token_from_cache(self):
         return cache.get(self.cache_key)
