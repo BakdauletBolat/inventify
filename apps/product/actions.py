@@ -142,7 +142,7 @@ class ImportProductAction:
                 product=product,
                 cost=0 if product_data.get('price') is None else product_data.get('price'),
             )
-            modification_attr = ModificationDraft.objects.get(product_id=product.id)
+            modification_attr = ModificationDraft.objects.filter(product_id=product.id).first()
             update_eav_attr(modification_attr.data, product.id)
 
             if os.environ.get('APP_ENV', 'production') == 'local':
