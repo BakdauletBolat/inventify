@@ -41,10 +41,12 @@ class DynamicProductFilterSet(django_filters.FilterSet):
             all_category.extend(category.get_all_descendants())
         products = Product.objects.filter(category__in=all_category)
         product_queryset = queryset.filter(name__icontains=value)
+        products_by_id_queryset = queryset.filter(id__icontains=value)
 
         # Получаем списки ID из обоих queryset и объединяем их
         product_ids = list(product_queryset.values_list('id', flat=True))
         product_ids += list(products.values_list('id', flat=True))
+        product_ids += list(products_by_id_queryset.values_list('id', flat=True))
 
         # Возвращаем объединённый queryset с помощью filter
         queryset = queryset.filter(id__in=product_ids)
