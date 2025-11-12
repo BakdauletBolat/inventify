@@ -112,8 +112,8 @@ def import_photos_from_recar(modeladmin, request, queryset: Product):
         
 
 class ProductAdmin(DjangoQLSearchMixin, admin.ModelAdmin):
+    actions = [import_photos_from_recar]
     form = ProductAdminForm
-    actions = [import_photos_from_recar, ]
     search_fields = ('name',)
     list_display = ('id', 'name', 'status')
     raw_id_fields = ('modification', 'parent',)
