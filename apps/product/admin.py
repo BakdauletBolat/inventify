@@ -105,8 +105,15 @@ class ProductComponents(admin.TabularInline):
     fields = ('name', 'category', 'status', 'warehouse',)
 
 
+@admin.action(description='Импортировать фото')
+def import_photos_from_recar(modeladmin, request, queryset: Product):
+    for obj in queryset:
+        ImportProductAction().save_image(product=obj)
+        
+
 class ProductAdmin(DjangoQLSearchMixin, admin.ModelAdmin):
     form = ProductAdminForm
+    actions = [import_photos_from_recar, ]
     search_fields = ('name',)
     list_display = ('id', 'name', 'status')
     raw_id_fields = ('modification', 'parent',)

@@ -18,8 +18,8 @@ class Request:
             "operationName": "ObtainTokens",
             "variables": {
                 "payload": {
-                    "email": "nika_8886@mail.ru",
-                    "password": "Kaynar_2024!"
+                    "email": "abdipatahovas@gmail.com",
+                    "password": "S123456sev$"
                 }
             },
             "query": "mutation ObtainTokens($payload: ObtainTokensInput!) {\n  obtainTokens(payload: $payload) {\n    tokens {\n      ...Tokens\n      __typename\n    }\n    user {\n      id\n      admin\n      email\n      firstname\n      lastname\n      picture {\n        id\n        url\n        __typename\n      }\n      phoneNumber\n      selectedDepartmentId\n      selectedCompanyId\n      selectedVehicleType\n      selectedCartId\n      verified\n      selectedDepartment {\n        id\n        tasksFlowEnabled\n        shipmentsEnabled\n        partsQuantityEnabled\n        rrrEnabled\n        oemPartsEnabled\n        companyId\n        name\n        vehicleType\n        plan {\n          ...Plan\n          __typename\n        }\n        __typename\n      }\n      departments {\n        id\n        tasksFlowEnabled\n        companyId\n        name\n        vehicleType\n        partsQuantityEnabled\n        rrrEnabled\n        oemPartsEnabled\n        shipmentsEnabled\n        __typename\n      }\n      companies {\n        id\n        name\n        __typename\n      }\n      roles {\n        ...Role\n        __typename\n      }\n      __typename\n    }\n    __typename\n  }\n}\n\nfragment Role on Role {\n  id\n  name\n  departmentId\n  companyId\n  partnership\n  distributorPermissions {\n    ...Permission\n    __typename\n  }\n  departmentPermissions {\n    ...Permission\n    __typename\n  }\n  companyPermissions {\n    ...Permission\n    __typename\n  }\n  __typename\n}\n\nfragment Permission on Permission {\n  id\n  name\n  __typename\n}\n\nfragment Tokens on Tokens {\n  accessToken\n  refreshToken\n  idToken\n  __typename\n}\n\nfragment Plan on Plan {\n  id\n  name\n  price\n  default\n  __typename\n}\n"
