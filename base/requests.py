@@ -270,10 +270,10 @@ class RecarRequest(Request):
             "variables": {
                 "id": product_id
             },
-            "query": "query FetchPartPhotos($id: ID) {\n  part(id: $id) {\n    id\n    picturesV2 {\n      id\n      order\n      status\n      visibility\n      s105x70\n      s195x130\n      s360x240\n      s570x380\n      s1050x700\n      optimized\n      original\n      __typename\n    }\n    __typename\n  }\n}\n"
+            "query": "query FetchPartPhotos($id: ID) {\n  part(id: $id) {\n    id\n    pictures {\n      id\n      order\n      status\n      visibility\n      host\n      url\n      fullUrl\n      __typename\n    }\n    __typename\n  }\n}"
         }
         response = self.post(data)
-        return response['data']['part']['picturesV2']
+        return response['data']['part']['pictures']
 
     def get_orders(self):
         data = {
