@@ -1,5 +1,6 @@
 import django_filters
-from django.db.models import OuterRef, Exists, Subquery, QuerySet
+from django.core.cache import cache
+from django.db.models import OuterRef, Exists, Subquery, QuerySet, Q
 from django_filters import OrderingFilter
 from eav.models import Attribute, Value
 
@@ -14,6 +15,15 @@ class CharInFilter(django_filters.BaseInFilter, django_filters.CharFilter):
 
 
 class DynamicProductFilterSet(django_filters.FilterSet):
+    """Оптимизированный FilterSet для продуктов с динамическими EAV фильтрами.
+
+    Рекомендуемые индексы для оптимальной производительности:
+    - Product: name, category_id, status, created_at
+    - Category: name
+    - Price: (product_id, created_at)
+    - Value: (attribute_id, entity_id, generic_value_id)
+    - ModelCar: (startDate, endDate, manufacturer_id)
+    """
     id = django_filters.NumberFilter(field_name='id')
     price = django_filters.RangeFilter(field_name='price__cost')
     category = django_filters.BaseInFilter(field_name='category__id', lookup_expr='in')
@@ -35,106 +45,133 @@ class DynamicProductFilterSet(django_filters.FilterSet):
 
     @staticmethod
     def filter_by_product_or_category_name(queryset: QuerySet, name, value):
-        categories = Category.objects.filter(name__icontains=value)
-        all_category = []
-        for category in categories:
-            all_category.extend(category.get_all_descendants())
-        products = Product.objects.filter(category__in=all_category)
-        product_queryset = queryset.filter(name__icontains=value)
-        products_by_id_queryset = queryset.filter(id__icontains=value)
+        # Оптимизация: используем Q объекты для объединения условий в один запрос
+        # вместо множественных запросов и объединения через списки ID
 
-        # Получаем списки ID из обоих queryset и объединяем их
-        product_ids = list(product_queryset.values_list('id', flat=True))
-        product_ids += list(products.values_list('id', flat=True))
-        product_ids += list(products_by_id_queryset.values_list('id', flat=True))
+        # Находим категории, совпадающие по имени
+        matching_categories = Category.objects.filter(name__icontains=value)
 
-        # Возвращаем объединённый queryset с помощью filter
-        queryset = queryset.filter(id__in=product_ids)
-        return queryset
+        # Собираем все категории (включая потомков) в один список
+        all_category_ids = set()
+        for category in matching_categories:
+            all_category_ids.add(category.id)
+            all_category_ids.update(
+                category.get_all_descendants().values_list('id', flat=True)
+            )
+
+        # Объединяем все условия через Q объекты
+        return queryset.filter(
+            Q(name__icontains=value) |           # Поиск по имени продукта
+            Q(id__icontains=value) |             # Поиск по ID продукта
+            Q(category_id__in=all_category_ids)  # Поиск по категориям
+        ).distinct()
 
     @classmethod
     def get_filters(cls):
         # Получаем существующие фильтры
         filters = super().get_filters()
 
+        # Проверяем кэш для EAV фильтров
+        cached_filters = cache.get('eav_dynamic_filters')
+        if cached_filters is not None:
+            filters.update(cached_filters)
+            return filters
+
         # Добавляем фильтры для EAV атрибутов
-        for attribute in Attribute.objects.all():
+        try:
+            # Оптимизируем запрос с prefetch для избежания N+1 проблемы
+            attributes = Attribute.objects.select_related('enum_group').prefetch_related('enum_group__values').all()
+        except Exception:
+            # Таблица еще не создана (во время миграций)
+            return filters
+
+        eav_filters = {}
+        for attribute in attributes:
             if attribute.datatype == Attribute.TYPE_OBJECT:
                 if attribute.slug == 'modelCar':
-                    filters['year_start'] = django_filters.NumberFilter(
+                    eav_filters['year_start'] = django_filters.NumberFilter(
                         method='filter_year_start'
                     )
-                    filters['year_end'] = django_filters.NumberFilter(
+                    eav_filters['year_end'] = django_filters.NumberFilter(
                         method='filter_year_end'
                     )
-                    filters['manufacturer'] = django_filters.BaseInFilter(
+                    eav_filters['manufacturer'] = django_filters.BaseInFilter(
                         method='filter_manufacturer', lookup_expr='in'
                     )
-                    filters['modelCar'] = django_filters.BaseInFilter(
+                    eav_filters['modelCar'] = django_filters.BaseInFilter(
                         method='filter_modelCar', lookup_expr='in'
                     )
                 else:
-                    filters[attribute.name] = django_filters.ModelChoiceFilter(
+                    eav_filters[attribute.name] = django_filters.ModelChoiceFilter(
                         field_name=f'eav__{attribute.slug}', queryset=ModelCar.objects.all()
                     )
             elif attribute.datatype == Attribute.TYPE_ENUM:
-                filters[attribute.name] = django_filters.ChoiceFilter(
+                eav_filters[attribute.name] = django_filters.ChoiceFilter(
                     field_name=f'eav__{attribute.slug}', choices=[
                         (choice.value, choice.value) for choice in attribute.enum_group.values.all()
                     ]
                 )
             else:
-                filters[attribute.name] = django_filters.CharFilter(
+                eav_filters[attribute.name] = django_filters.CharFilter(
                     field_name=f'eav__{attribute.slug}', lookup_expr='icontains'
                 )
 
+        # Сохраняем в кэш на 1 час
+        cache.set('eav_dynamic_filters', eav_filters, 3600)
+
+        # Объединяем с основными фильтрами
+        filters.update(eav_filters)
         return filters
 
     @staticmethod
-    def get_eav_subquery(model_car_ids):
+    def get_eav_subquery(model_car_queryset):
+        """Оптимизированный подзапрос для EAV значений.
+
+        Принимает queryset вместо списка ID для избежания лишних запросов.
+        """
         return Exists(Value.objects.filter(
             attribute__slug='modelCar',
-            generic_value_id__in=model_car_ids,
+            generic_value_id__in=Subquery(model_car_queryset.values('id')),
             entity_id=OuterRef('pk')
         ))
 
     def filter_year_start(self, queryset, name, value):
-        modelCars = ModelCar.objects.filter(startDate__year__gte=value)
-        eav_subquery = self.get_eav_subquery(modelCars.values_list('id', flat=True))
-        return queryset.filter(eav_subquery)
+        """Фильтр по году начала производства модели автомобиля."""
+        model_cars = ModelCar.objects.filter(startDate__year__gte=value)
+        return queryset.filter(self.get_eav_subquery(model_cars))
 
     def filter_year_end(self, queryset, name, value):
-        modelCars = ModelCar.objects.filter(endDate__year__lte=value)
-        eav_subquery = self.get_eav_subquery(modelCars.values_list('id', flat=True))
-        return queryset.filter(eav_subquery)
+        """Фильтр по году окончания производства модели автомобиля."""
+        model_cars = ModelCar.objects.filter(endDate__year__lte=value)
+        return queryset.filter(self.get_eav_subquery(model_cars))
 
     def filter_manufacturer(self, queryset, name, value):
-        modelCars = ModelCar.objects.filter(manufacturer_id__in=value)
-        eav_subquery = self.get_eav_subquery(modelCars.values_list('id', flat=True))
-        return queryset.filter(eav_subquery)
+        """Фильтр по производителю автомобиля."""
+        model_cars = ModelCar.objects.filter(manufacturer_id__in=value)
+        return queryset.filter(self.get_eav_subquery(model_cars))
 
     def filter_modelCar(self, queryset, name, value):
-        modelCars = ModelCar.objects.filter(id__in=value)
-        eav_subquery = self.get_eav_subquery(modelCars.values_list('id', flat=True))
-        return queryset.filter(eav_subquery)
+        """Фильтр по конкретной модели автомобиля."""
+        model_cars = ModelCar.objects.filter(id__in=value)
+        return queryset.filter(self.get_eav_subquery(model_cars))
 
     def filter_by_latest_price(self, queryset, name, value):
-        # Подзапрос для получения последней цены для каждого продукта
-        latest_price_date = Price.objects.filter(product=OuterRef('pk')).order_by('-created_at').values('created_at')[
-                            :1]
+        """Оптимизированный фильтр по последней цене продукта.
 
-        # Подзапрос для получения стоимости последней цены на основе максимальной даты
-        latest_price = Price.objects.filter(product=OuterRef('pk'), created_at=Subquery(latest_price_date)).values(
-            'cost')[:1]
+        Использует один подзапрос вместо двух для лучшей производительности.
+        """
+        # Один подзапрос для получения последней цены
+        latest_price_subquery = Price.objects.filter(
+            product=OuterRef('pk')
+        ).order_by('-created_at').values('cost')[:1]
 
-        # Аннотация для добавления последней цены в queryset
-        queryset = queryset.annotate(latest_price=Subquery(latest_price))
+        # Аннотируем queryset последней ценой
+        queryset = queryset.annotate(latest_price=Subquery(latest_price_subquery))
 
-        # Применяем фильтр диапазона к последней цене
+        # Применяем фильтр диапазона
         if value.start is not None:
             queryset = queryset.filter(latest_price__gte=value.start)
         if value.stop is not None:
             queryset = queryset.filter(latest_price__lte=value.stop)
 
-        # Возвращаем только уникальные продукты
         return queryset.distinct()

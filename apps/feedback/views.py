@@ -19,12 +19,22 @@ class FeedbackViewSet(ModelViewSet):
         self.perform_create(serializer)
         headers = self.get_success_headers(serializer.data)
 
+        product = serializer.validated_data.get('product')
+        comment = serializer.validated_data.get('comment')
+
         message = (
             f"🔔 Новая обратная связь ID: {serializer.instance.id}\n"
             f"📞 Номер телефона: {serializer.validated_data['phone']}\n"
             f"👤 Имя: {serializer.validated_data['name']}\n"
-            f"⏰ Дата создания: {datetime.now().strftime('%Y-%m-%d %H:%M')}"
         )
+
+        if product:
+            message += f"🛍️ Продукт: {product.name} (ID: {product.id})\n"
+
+        if comment:
+            message += f"💬 Комментарий: {comment}\n"
+
+        message += f"⏰ Дата создания: {datetime.now().strftime('%Y-%m-%d %H:%M')}"
 
         TelegramRequest().send_sms_feedback(message)
         return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
