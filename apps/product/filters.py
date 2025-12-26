@@ -1,5 +1,4 @@
 import django_filters
-from django.core.cache import cache
 from django.db.models import OuterRef, Exists, Subquery, QuerySet, Q
 from django_filters import OrderingFilter
 from eav.models import Attribute, Value
@@ -68,14 +67,14 @@ class DynamicProductFilterSet(django_filters.FilterSet):
 
     @classmethod
     def get_filters(cls):
+        """Получает все фильтры, включая динамические EAV фильтры.
+
+        Примечание: Этот метод вызывается ОДИН РАЗ при загрузке класса,
+        а не при каждом запросе, поэтому кэширование здесь не требуется.
+        Оптимизация через select_related/prefetch_related достаточна.
+        """
         # Получаем существующие фильтры
         filters = super().get_filters()
-
-        # Проверяем кэш для EAV фильтров
-        cached_filters = cache.get('eav_dynamic_filters')
-        if cached_filters is not None:
-            filters.update(cached_filters)
-            return filters
 
         # Добавляем фильтры для EAV атрибутов
         try:
@@ -85,42 +84,37 @@ class DynamicProductFilterSet(django_filters.FilterSet):
             # Таблица еще не создана (во время миграций)
             return filters
 
-        eav_filters = {}
+        # Создаем динамические фильтры на основе EAV атрибутов
         for attribute in attributes:
             if attribute.datatype == Attribute.TYPE_OBJECT:
                 if attribute.slug == 'modelCar':
-                    eav_filters['year_start'] = django_filters.NumberFilter(
+                    filters['year_start'] = django_filters.NumberFilter(
                         method='filter_year_start'
                     )
-                    eav_filters['year_end'] = django_filters.NumberFilter(
+                    filters['year_end'] = django_filters.NumberFilter(
                         method='filter_year_end'
                     )
-                    eav_filters['manufacturer'] = django_filters.BaseInFilter(
+                    filters['manufacturer'] = django_filters.BaseInFilter(
                         method='filter_manufacturer', lookup_expr='in'
                     )
-                    eav_filters['modelCar'] = django_filters.BaseInFilter(
+                    filters['modelCar'] = django_filters.BaseInFilter(
                         method='filter_modelCar', lookup_expr='in'
                     )
                 else:
-                    eav_filters[attribute.name] = django_filters.ModelChoiceFilter(
+                    filters[attribute.name] = django_filters.ModelChoiceFilter(
                         field_name=f'eav__{attribute.slug}', queryset=ModelCar.objects.all()
                     )
             elif attribute.datatype == Attribute.TYPE_ENUM:
-                eav_filters[attribute.name] = django_filters.ChoiceFilter(
+                filters[attribute.name] = django_filters.ChoiceFilter(
                     field_name=f'eav__{attribute.slug}', choices=[
                         (choice.value, choice.value) for choice in attribute.enum_group.values.all()
                     ]
                 )
             else:
-                eav_filters[attribute.name] = django_filters.CharFilter(
+                filters[attribute.name] = django_filters.CharFilter(
                     field_name=f'eav__{attribute.slug}', lookup_expr='icontains'
                 )
 
-        # Сохраняем в кэш на 1 час
-        cache.set('eav_dynamic_filters', eav_filters, 3600)
-
-        # Объединяем с основными фильтрами
-        filters.update(eav_filters)
         return filters
 
     @staticmethod
