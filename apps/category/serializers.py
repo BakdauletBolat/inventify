@@ -9,7 +9,7 @@ class CategorySerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Category
-        fields = '__all__'
+        fields = ('id', 'name', 'parent', 'status', 'recar_category_id', 'products_count', 'created_at', 'updated_at')
 
 
 class RecursiveField(serializers.Serializer):
