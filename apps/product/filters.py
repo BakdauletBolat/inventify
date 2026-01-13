@@ -55,14 +55,14 @@ class DynamicProductFilterSet(django_filters.FilterSet):
         for category in matching_categories:
             all_category_ids.add(category.id)
             all_category_ids.update(
-                category.get_all_descendants().values_list('id', flat=True)
+                category.get_all_descendants()
             )
 
         # Объединяем все условия через Q объекты
         return queryset.filter(
             Q(name__icontains=value) |           # Поиск по имени продукта
             Q(id__icontains=value) |             # Поиск по ID продукта
-            Q(category_id__in=all_category_ids)  # Поиск по категориям
+            Q(category__in=all_category_ids)  # Поиск по категориям
         ).distinct()
 
     @classmethod
