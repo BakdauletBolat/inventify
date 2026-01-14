@@ -13,6 +13,7 @@ from apps.product.actions import ImportProductAction
 from apps.product.models import ImportProductData
 from apps.product.models.Price import Price
 from apps.product.models.Product import *
+from apps.product.tasks import import_pictures_from_recar
 
 
 class ProductAdminForm(BaseDynamicEntityForm):
@@ -108,7 +109,7 @@ class ProductComponents(admin.TabularInline):
 @admin.action(description='Импортировать фото')
 def import_photos_from_recar(modeladmin, request, queryset: Product):
     for obj in queryset:
-        ImportProductAction().save_image(product=obj)
+        import_pictures_from_recar.delay(obj.id)
         
 
 class ProductAdmin(DjangoQLSearchMixin, admin.ModelAdmin):
