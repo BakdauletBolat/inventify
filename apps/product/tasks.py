@@ -4,6 +4,7 @@ from apps.product.enums import StatusChoices
 from apps.product.models import Product
 from apps.product.models.ImportProductData import ImportProductData
 from apps.product.models.Price import Price
+from apps.product.repository import ProductRepository
 from base.requests import RecarRequest
 
 
@@ -91,3 +92,11 @@ def import_parent_products():
     products = ImportProductData.objects.exclude(data__nearestParentId=None)
     for product in products:
         action.input_parent(product.data)
+
+
+@shared_task
+def import_pictures_from_recar(product_id: int):
+    product = ProductRepository().get(product_id)
+    from apps.product.actions import ImportProductAction
+    action = ImportProductAction()
+    action.save_image(product=product)
