@@ -31,6 +31,8 @@ user_url = [
         })),
     path('bulk-delete/', views.UserViewSet.as_view({"delete": "bulk_delete"})),
     path('roles/', views.UserViewSet.as_view({'get': 'roles'})),
+    path('change-password/', views.UserViewSet.as_view({'post': 'change_password'})),
+    path('reset-password/', views.UserViewSet.as_view({'post': 'reset_password'})),
     path('orders/', views.UserViewSet.as_view({'get': 'orders'})),
     path('orders/<int:pk>/cancel/', views.UserViewSet.as_view({'post': 'cancel'}))
 ]

@@ -1,4 +1,7 @@
+from django.contrib.auth.password_validation import validate_password
+from django.core.exceptions import ValidationError as DjangoValidationError
 from django_filters.rest_framework import DjangoFilterBackend
+from drf_yasg.utils import swagger_auto_schema
 from rest_framework import permissions
 from rest_framework import status
 from rest_framework import viewsets
@@ -16,6 +19,8 @@ from users import serializers
 from users.actions import CreateUserAction
 from users.filters import UserFilter
 from users.models.User import User, Role
+from users.serializers import ChangePasswordSerializer, ResetPasswordRequestSerializer
+from users.services.reset_password import ResetPasswordService
 
 
 class UserViewSet(viewsets.ModelViewSet):
@@ -88,6 +93,44 @@ class UserViewSet(viewsets.ModelViewSet):
 
         deleted_count = users.update(status=StatusEnum.DELETED.value)
         return Response({"deleted": deleted_count}, status=status.HTTP_204_NO_CONTENT)
+
+    @swagger_auto_schema(request_body=ChangePasswordSerializer)
+    def change_password(self, request):
+        serializer = ChangePasswordSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        user = request.user
+        old_password = serializer.validated_data["old_password"]
+        new_password = serializer.validated_data["new_password"]
+
+        if not user.check_password(old_password):
+            return Response({"error": "Неправильный пароль"}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            validate_password(new_password, user=user)
+        except DjangoValidationError as e:
+            return Response({"error": e.messages}, status=status.HTTP_400_BAD_REQUEST)
+
+        user.set_password(new_password)
+        user.save()
+
+        return Response({"message": "Пароль успешно изменен"})
+
+    @swagger_auto_schema(request_body=ResetPasswordRequestSerializer)
+    def reset_password(self, request):
+        serializer = ResetPasswordRequestSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        phone = serializer.validated_data["phone"]
+        user = User.objects.filter(phone=phone).first()
+        if user is None:
+            return Response({"error": "Пользователь не найден"}, status=status.HTTP_404_NOT_FOUND)
+        if not user.email:
+            return Response({"error": "У пользователя не указан email"},
+                            status=status.HTTP_400_BAD_REQUEST)
+
+        ResetPasswordService.reset_random_and_email(user)
+        return Response({"message": "Новый пароль отправлен на email"})
 
 
 class UsersMe(APIView):

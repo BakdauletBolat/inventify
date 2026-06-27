@@ -95,3 +95,12 @@ class UserRegisterSerializer(UserSerializer):
         attrs['password'] = make_password(attrs['password'])
         attrs.pop('password2')
         return attrs
+
+
+class ChangePasswordSerializer(serializers.Serializer):
+    old_password = serializers.CharField(required=True)
+    new_password = serializers.CharField(required=True)
+
+
+class ResetPasswordRequestSerializer(serializers.Serializer):
+    phone = serializers.CharField(required=True)
