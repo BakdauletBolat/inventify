@@ -104,3 +104,13 @@ class ChangePasswordSerializer(serializers.Serializer):
 
 class ResetPasswordRequestSerializer(serializers.Serializer):
     phone = serializers.CharField(required=True)
+
+
+class PasswordResetRequestSerializer(serializers.Serializer):
+    phone = serializers.CharField(required=True)
+
+
+class PasswordResetConfirmSerializer(serializers.Serializer):
+    phone = serializers.CharField(required=True)
+    otp = serializers.CharField(required=True)
+    new_password = serializers.CharField(required=True)

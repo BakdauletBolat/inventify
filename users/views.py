@@ -1,3 +1,5 @@
+import logging
+
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django_filters.rest_framework import DjangoFilterBackend
@@ -19,8 +21,15 @@ from users import serializers
 from users.actions import CreateUserAction
 from users.filters import UserFilter
 from users.models.User import User, Role
-from users.serializers import ChangePasswordSerializer, ResetPasswordRequestSerializer
-from users.services.reset_password import ResetPasswordService
+from users.otp.actions import GetStatusUserCodeAction
+from users.otp.enums import SmsStatus
+from users.serializers import (
+    ChangePasswordSerializer,
+    ResetPasswordRequestSerializer,
+    PasswordResetRequestSerializer,
+    PasswordResetConfirmSerializer,
+)
+from users.services.reset_password import ResetPasswordService, SmsPasswordResetService
 
 
 class UserViewSet(viewsets.ModelViewSet):
@@ -94,7 +103,10 @@ class UserViewSet(viewsets.ModelViewSet):
         deleted_count = users.update(status=StatusEnum.DELETED.value)
         return Response({"deleted": deleted_count}, status=status.HTTP_204_NO_CONTENT)
 
-    @swagger_auto_schema(request_body=ChangePasswordSerializer)
+    @swagger_auto_schema(request_body=ChangePasswordSerializer,
+                         operation_id='Смена пароля',
+                         tags=['Админ/Пользователи', 'Клиент/Пользователи'],
+                         )
     def change_password(self, request):
         serializer = ChangePasswordSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -116,7 +128,10 @@ class UserViewSet(viewsets.ModelViewSet):
 
         return Response({"message": "Пароль успешно изменен"})
 
-    @swagger_auto_schema(request_body=ResetPasswordRequestSerializer)
+    @swagger_auto_schema(request_body=ResetPasswordRequestSerializer,
+                         operation_id='Сброс пароля на email (сотрудники)',
+                         tags=['Админ/Пользователи'],
+                         )
     def reset_password(self, request):
         serializer = ResetPasswordRequestSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -131,6 +146,61 @@ class UserViewSet(viewsets.ModelViewSet):
 
         ResetPasswordService.reset_random_and_email(user)
         return Response({"message": "Новый пароль отправлен на email"})
+
+    @swagger_auto_schema(request_body=PasswordResetRequestSerializer,
+                         operation_id='Сброс пароля по SMS: запрос кода (клиенты)',
+                         tags=['Клиент/Пользователи'],
+                         )
+    def password_reset_request(self, request):
+        """Клиент: запрос SMS-кода для сброса пароля."""
+        serializer = PasswordResetRequestSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        phone = serializer.validated_data["phone"]
+        user = User.objects.filter(phone=phone).first()
+        if user is not None:
+            try:
+                SmsPasswordResetService.send_code(user)
+            except Exception as e:
+                logging.exception(e)
+
+        # Нейтральный ответ — не раскрываем, зарегистрирован ли номер
+        return Response({"message": "Если номер зарегистрирован, на него отправлен код"})
+
+    @swagger_auto_schema(request_body=PasswordResetConfirmSerializer,
+                         operation_id='Сброс пароля по SMS: подтверждение (клиенты)',
+                         tags=['Клиент/Пользователи'],
+                         )
+    def password_reset_confirm(self, request):
+        """Клиент: подтверждение сброса пароля по SMS-коду."""
+        serializer = PasswordResetConfirmSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        phone = serializer.validated_data["phone"]
+        otp = serializer.validated_data["otp"]
+        new_password = serializer.validated_data["new_password"]
+
+        invalid_code_response = Response(
+            {"detail": "Неправильный код, пожалуйста попробуйте еще"},
+            status=status.HTTP_422_UNPROCESSABLE_ENTITY,
+        )
+
+        user = User.objects.filter(phone=phone).first()
+        if user is None:
+            return invalid_code_response
+
+        code_status = GetStatusUserCodeAction.run(user=user, otp=otp)
+        if code_status == SmsStatus.SUCCESS:
+            try:
+                validate_password(new_password, user=user)
+            except DjangoValidationError as e:
+                return Response({"error": e.messages}, status=status.HTTP_400_BAD_REQUEST)
+            SmsPasswordResetService.confirm(user, new_password)
+            return Response({"message": "Пароль успешно изменён"})
+        elif code_status == SmsStatus.TIMEOUT:
+            return Response({"detail": "Время кода истекло"},
+                            status=status.HTTP_422_UNPROCESSABLE_ENTITY)
+        return invalid_code_response
 
 
 class UsersMe(APIView):

@@ -1,8 +1,15 @@
+from unittest import mock
+
 from django.core import mail
 from django.test import TestCase
 
 from users.models.User import User
-from users.services.reset_password import DEFAULT_PASSWORD, ResetPasswordService
+from users.otp.models import UserCode
+from users.services.reset_password import (
+    DEFAULT_PASSWORD,
+    ResetPasswordService,
+    SmsPasswordResetService,
+)
 
 
 class ResetPasswordServiceTest(TestCase):
@@ -23,3 +30,24 @@ class ResetPasswordServiceTest(TestCase):
         self.assertFalse(self.user.check_password("oldpass123"))
         self.assertEqual(len(mail.outbox), 1)
         self.assertIn(self.user.email, mail.outbox[0].to)
+
+
+class SmsPasswordResetServiceTest(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(
+            phone="+77770000010", password="oldpass123", email=None
+        )
+
+    @mock.patch("users.services.reset_password.SmsService.send_sms")
+    def test_send_code_creates_usercode_and_sends_sms(self, send_sms):
+        SmsPasswordResetService.send_code(self.user)
+
+        codes = UserCode.objects.filter(user=self.user)
+        self.assertEqual(codes.count(), 1)
+        send_sms.assert_called_once_with(phone=self.user.phone, sms=codes.first().otp)
+
+    def test_confirm_sets_new_password(self):
+        SmsPasswordResetService.confirm(self.user, "BrandNew987")
+        self.user.refresh_from_db()
+        self.assertTrue(self.user.check_password("BrandNew987"))
+        self.assertFalse(self.user.check_password("oldpass123"))

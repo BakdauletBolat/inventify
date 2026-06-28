@@ -33,6 +33,8 @@ user_url = [
     path('roles/', views.UserViewSet.as_view({'get': 'roles'})),
     path('change-password/', views.UserViewSet.as_view({'post': 'change_password'})),
     path('reset-password/', views.UserViewSet.as_view({'post': 'reset_password'})),
+    path('password-reset/request/', views.UserViewSet.as_view({'post': 'password_reset_request'})),
+    path('password-reset/confirm/', views.UserViewSet.as_view({'post': 'password_reset_confirm'})),
     path('orders/', views.UserViewSet.as_view({'get': 'orders'})),
     path('orders/<int:pk>/cancel/', views.UserViewSet.as_view({'post': 'cancel'}))
 ]
