@@ -102,8 +102,17 @@ DATABASES = {
         "PASSWORD": os.environ.get("SQL_PASSWORD", "123"),
         "HOST": os.environ.get("SQL_HOST", "localhost"),
         "PORT": os.environ.get("SQL_PORT", "5432"),
+        # Переиспользуем соединения, чтобы не открывать новое на каждый запрос
+        "CONN_MAX_AGE": int(os.environ.get("SQL_CONN_MAX_AGE", 60)),
     },
 }
+
+# Быстрый таймаут подключения для postgres (не виснуть на недоступной БД).
+# Только для postgres — sqlite/др. движки не знают connect_timeout.
+if "postgresql" in DATABASES["default"]["ENGINE"]:
+    DATABASES["default"]["OPTIONS"] = {
+        "connect_timeout": int(os.environ.get("SQL_CONNECT_TIMEOUT", 5)),
+    }
 
 # Password validation
 # https://docs.djangoproject.com/en/4.1/ref/settings/#auth-password-validators
