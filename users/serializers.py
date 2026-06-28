@@ -62,21 +62,15 @@ class UserUpdateSerializer(UserSerializer):
         request = self.context['request']
         user = request.user
 
-        # Проверка назначения роли "Директор" или is_superuser
-        roles = attrs.get('roles', None)
-        is_superuser = attrs.get('is_superuser', None)
+        is_director = user.is_superuser or user.roles.filter(name=RoleEnum.DIRECTOR.value).exists()
 
-        director_role = Role.objects.filter(name=RoleEnum.DIRECTOR.value).first()
+        # Менять роли и признак сотрудника (is_staff) может только директор/суперпользователь
+        if ('roles' in attrs or 'is_staff' in attrs) and not is_director:
+            raise PermissionDenied("Менять роли и признак сотрудника может только директор.")
 
-        if roles and director_role in roles:
-            # Только директор или суперпользователь может назначать "Директор"
-            if not user.is_superuser and not user.roles.filter(name=RoleEnum.DIRECTOR.value).exists():
-                raise PermissionDenied("Только директор или суперпользователь могут назначать роль 'Директор'.")
-
-        if is_superuser is not None and is_superuser:
-            # Только суперпользователь может назначить is_superuser=True
-            if not user.is_superuser:
-                raise PermissionDenied("Только суперпользователь может назначить is_superuser=True.")
+        # is_superuser=True — только суперпользователь
+        if attrs.get('is_superuser') and not user.is_superuser:
+            raise PermissionDenied("Только суперпользователь может назначить is_superuser=True.")
 
         return super().validate(attrs)
 
@@ -90,6 +84,16 @@ class UserRegisterSerializer(UserSerializer):
     city = serializers.PrimaryKeyRelatedField(queryset=City.objects.all(), required=True)
 
     def validate(self, attrs):
+        request = self.context.get('request')
+        user = getattr(request, 'user', None)
+        is_director = bool(
+            user and (user.is_superuser or user.roles.filter(name=RoleEnum.DIRECTOR.value).exists())
+        )
+        if (attrs.get('roles') or attrs.get('is_staff')) and not is_director:
+            raise PermissionDenied("Создавать сотрудников и назначать роли может только директор.")
+        if attrs.get('is_superuser') and not (user and user.is_superuser):
+            raise PermissionDenied("Только суперпользователь может назначить is_superuser=True.")
+
         if attrs['password'] != attrs['password2']:
             raise serializers.ValidationError({"password": "Password fields didn't match."})
         attrs['password'] = make_password(attrs['password'])

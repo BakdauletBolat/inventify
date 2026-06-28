@@ -56,7 +56,10 @@ class InventifyAPIPermission(BasePermission):
     def has_permission(self, request, view):
         # Проверяем, начинается ли URL с /api/admin
         if request.path.startswith('/api/admin'):
-            # Используем ваш IsStaff для проверки разрешений
-            return IsStaff().has_permission(request, view)
+            user = request.user
+            if isinstance(user, AnonymousUser) or not user.is_authenticated:
+                return False
+            # Доступ в админку — только сотрудникам (is_staff) и суперпользователям
+            return bool(user.is_superuser or user.is_staff)
         # Для всех остальных URL доступ разрешен
         return True

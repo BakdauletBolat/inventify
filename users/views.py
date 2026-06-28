@@ -1,5 +1,6 @@
 import logging
 
+from django.contrib.auth.models import AnonymousUser
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django_filters.rest_framework import DjangoFilterBackend
@@ -19,6 +20,7 @@ from base.enums import StatusEnum
 from inventify.permissions import IsDirector
 from users import serializers
 from users.actions import CreateUserAction
+from users.enums import RoleEnum
 from users.filters import UserFilter
 from users.models.User import User, Role
 from users.otp.actions import GetStatusUserCodeAction
@@ -37,6 +39,19 @@ class UserViewSet(viewsets.ModelViewSet):
     serializer_class = serializers.UserSerializer
     filter_backends = [DjangoFilterBackend]
     filterset_class = UserFilter
+
+    def get_queryset(self):
+        qs = User.objects.all().order_by('id')
+        user = self.request.user
+        if isinstance(user, AnonymousUser) or not user.is_authenticated:
+            return qs.filter(is_staff=False)
+        is_top = user.is_superuser or user.roles.filter(
+            name__in=[RoleEnum.DIRECTOR.value, RoleEnum.DEPARTMENT_DIRECTOR.value]
+        ).exists()
+        if not is_top:
+            # Обычный сотрудник видит только клиентов, не других сотрудников
+            return qs.filter(is_staff=False)
+        return qs
 
     def get_permissions(self):
         """
@@ -61,7 +76,7 @@ class UserViewSet(viewsets.ModelViewSet):
         return Response(response_data)
 
     def create(self, request, *args, **kwargs):
-        serializer = serializers.UserRegisterSerializer(data=request.data)
+        serializer = serializers.UserRegisterSerializer(data=request.data, context={'request': request})
         serializer.is_valid(raise_exception=True)
         user = CreateUserAction(data=serializer.validated_data).run()
         response_data = self.serializer_class(user).data
