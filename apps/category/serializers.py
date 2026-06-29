@@ -4,9 +4,12 @@ from apps.category.models import Category
 
 
 class CategorySerializer(serializers.ModelSerializer):
+    products_count = serializers.IntegerField(read_only=True,
+                                              help_text="Количество продуктов в категории")
+
     class Meta:
         model = Category
-        fields = '__all__'
+        fields = ('id', 'name', 'parent', 'status', 'recar_category_id', 'products_count', 'created_at', 'updated_at')
 
 
 class RecursiveField(serializers.Serializer):
@@ -17,9 +20,9 @@ class RecursiveField(serializers.Serializer):
 
 class CategoryTreeSerializer(serializers.ModelSerializer):
     children = RecursiveField(many=True, read_only=True, help_text="Дочерние категории")
-    products_count = serializers.IntegerField(read_only=True, 
+    products_count = serializers.IntegerField(read_only=True,
                                               help_text="Количество продуктов в категории")
 
     class Meta:
         model = Category
-        fields = ('id', 'name', 'parent', 'children', 'products_count')
+        fields = ('id', 'name', 'parent', 'status', 'children', 'products_count')

@@ -6,9 +6,18 @@ from base.models import BaseModel
 # Create your models here.
 
 class Category(BaseModel):
+    STATUS_INACTIVE = 0
+    STATUS_ACTIVE = 1
+
+    STATUS_CHOICES = [
+        (STATUS_INACTIVE, 'Inactive'),
+        (STATUS_ACTIVE, 'Active'),
+    ]
+
     name = models.CharField(max_length=255)
     parent = models.ForeignKey('self', on_delete=models.SET_NULL, null=True, blank=True, related_name='children')
     recar_category_id = models.IntegerField(null=True, blank=True, verbose_name='Категория из Рекар')
+    status = models.IntegerField(choices=STATUS_CHOICES, default=STATUS_ACTIVE, verbose_name='Статус')
 
 
     def __str__(self):
