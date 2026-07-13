@@ -1,6 +1,7 @@
 from datetime import timedelta
 
 from celery import shared_task
+from django.core.management import call_command
 from django.utils import timezone
 
 # Размер чанка при удалении — чтобы не держать долгий lock на таблице
@@ -41,3 +42,9 @@ def clean_drf_api_logs():
         )
     )
     return {'deleted_5xx': deleted_errors, 'deleted_other': deleted_other}
+
+
+@shared_task
+def clear_expired_sessions():
+    """Удаляет истёкшие сессии из django_session (management-команда clearsessions)."""
+    call_command('clearsessions')

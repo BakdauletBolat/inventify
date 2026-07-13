@@ -62,6 +62,11 @@ app.conf.beat_schedule = {
         'task': 'celery.backend_cleanup',
         'schedule': crontab(hour=4, minute=0),
     },
+
+    'Очистка истёкших сессий': {
+        'task': 'base.tasks.clear_expired_sessions',
+        'schedule': crontab(day_of_week=0, hour=3, minute=30),
+    },
 }
 
 # Using a string here means the worker doesn't have to serialize
