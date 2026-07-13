@@ -209,6 +209,15 @@ STORAGES = {
 }
 
 if USE_S3_MEDIA:
+    from botocore.config import Config as BotoConfig
+
+    # PS.KZ не поддерживает aws-chunked загрузку с CRC-чексуммами,
+    # которую botocore >= 1.36 включает по умолчанию (MissingContentLength)
+    AWS_S3_CLIENT_CONFIG = BotoConfig(
+        s3={'addressing_style': AWS_S3_ADDRESSING_STYLE},
+        request_checksum_calculation='when_required',
+        response_checksum_validation='when_required',
+    )
     STORAGES['default'] = {'BACKEND': 'storages.backends.s3boto3.S3Boto3Storage'}
     MEDIA_URL = f'{AWS_S3_ENDPOINT_URL}/{AWS_STORAGE_BUCKET_NAME}/'
 else:

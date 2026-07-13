@@ -133,12 +133,16 @@ class Command(BaseCommand):
             region_name=settings.AWS_S3_REGION_NAME,
             aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
             aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
-            config=Config(s3={'addressing_style': settings.AWS_S3_ADDRESSING_STYLE}),
+            config=Config(
+                s3={'addressing_style': settings.AWS_S3_ADDRESSING_STYLE},
+                # PS.KZ не поддерживает aws-chunked с CRC-чексуммами
+                # (botocore >= 1.36 включает их по умолчанию — MissingContentLength)
+                request_checksum_calculation='when_required',
+                response_checksum_validation='when_required',
+            ),
         )
 
     def _upload_batch(self, client, bucket, files, total, stats, errors):
-        from botocore.exceptions import ClientError
-
         for key, local_path, size in files:
             stats['processed'] += 1
             try:
@@ -153,7 +157,9 @@ class Command(BaseCommand):
                     )
                     stats['uploaded'] += 1
                     stats['uploaded_bytes'] += size
-            except (ClientError, OSError) as exc:
+            # ошибка по одному файлу не прерывает процесс
+            # (boto3 кидает и S3UploadFailedError, не являющийся ClientError)
+            except Exception as exc:
                 errors.append((key, exc))
 
             if stats['processed'] % 100 == 0 or stats['processed'] == total:
