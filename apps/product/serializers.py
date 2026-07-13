@@ -20,11 +20,16 @@ class ProductImageSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
     def get_image(self, instance):
+        if not instance.image:
+            return None
+        url = instance.image.url
+        # При S3-хранилище .url уже абсолютный — отдаём как есть
+        if url.startswith(('http://', 'https://')):
+            return url
         request = self.context.get('request', None)
         if request is None:
             return None
-        image = instance.image.url
-        return request.build_absolute_uri(image)
+        return request.build_absolute_uri(url)
 
 
 class ProductSerializer(serializers.ModelSerializer):

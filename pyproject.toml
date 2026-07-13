@@ -33,6 +33,8 @@ djangoql = "0.17.1"
 pydantic = "^2.9.2"
 django-celery-beat = "^2.7.0"
 drf-api-logger = "^1.1.16"
+django-storages = {extras = ["s3"], version = "^1.14.6"}
+django-cleanup = "^9.0.0"
 
 
 [build-system]

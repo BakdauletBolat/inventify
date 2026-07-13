@@ -72,6 +72,10 @@ if DEBUG:
     INSTALLED_APPS += ['silk']
     MIDDLEWARE += ['silk.middleware.SilkyMiddleware']
 
+# django-cleanup удаляет файлы из хранилища при удалении/замене объектов.
+# Должен быть последним в INSTALLED_APPS.
+INSTALLED_APPS += ['django_cleanup.apps.CleanupConfig']
+
 ROOT_URLCONF = 'inventify.urls'
 
 TEMPLATES = [
@@ -183,7 +187,34 @@ SIMPLE_JWT = {
     "REFRESH_TOKEN_LIFETIME": timedelta(days=1),
 }
 
-MEDIA_URL = '/media/'
+# --- Media: локальный диск или S3-совместимое хранилище PS.KZ ---
+# Главный переключатель: при 1 все FileField/ImageField пишут и читают из S3-бакета
+USE_S3_MEDIA = int(os.environ.get('USE_S3_MEDIA', 0))
+
+AWS_ACCESS_KEY_ID = os.environ.get('AWS_ACCESS_KEY_ID')
+AWS_SECRET_ACCESS_KEY = os.environ.get('AWS_SECRET_ACCESS_KEY')
+AWS_STORAGE_BUCKET_NAME = os.environ.get('AWS_STORAGE_BUCKET_NAME', 'kaynar')
+AWS_S3_ENDPOINT_URL = os.environ.get('AWS_S3_ENDPOINT_URL', 'https://object.pscloud.io')
+AWS_S3_REGION_NAME = os.environ.get('AWS_S3_REGION_NAME', 'us-east-1')
+AWS_S3_FILE_OVERWRITE = False
+# Фото публичные: чистые URL без подписей
+AWS_DEFAULT_ACL = 'public-read'
+AWS_QUERYSTRING_AUTH = False
+# path-style, чтобы URL имел вид https://object.pscloud.io/kaynar/<key>
+AWS_S3_ADDRESSING_STYLE = 'path'
+
+STORAGES = {
+    'default': {'BACKEND': 'django.core.files.storage.FileSystemStorage'},
+    'staticfiles': {'BACKEND': 'django.contrib.staticfiles.storage.StaticFilesStorage'},
+}
+
+if USE_S3_MEDIA:
+    STORAGES['default'] = {'BACKEND': 'storages.backends.s3boto3.S3Boto3Storage'}
+    MEDIA_URL = f'{AWS_S3_ENDPOINT_URL}/{AWS_STORAGE_BUCKET_NAME}/'
+else:
+    MEDIA_URL = '/media/'
+
+# MEDIA_ROOT нужен и при S3 — из него читает команда migrate_media_to_s3
 MEDIA_ROOT = BASE_DIR / 'media'
 PREPEND_MEDIA_URL = True
 AUTH_USER_MODEL = "users.User"

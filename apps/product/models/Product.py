@@ -1,6 +1,5 @@
 from django.contrib.contenttypes.fields import GenericRelation
-from django.core.files.storage import default_storage
-from django.db.models.signals import post_save, pre_delete
+from django.db.models.signals import post_save
 from django.dispatch import receiver
 from eav.decorators import register_eav
 
@@ -92,11 +91,8 @@ class ProductImage(models.Model):
         verbose_name = 'Фото продукта'
         verbose_name_plural = 'Фото продуктов'
 
-    def delete(self, *args, **kwargs):
-        # Удаление файла перед удалением объекта
-        if self.image and default_storage.exists(self.image.name):
-            default_storage.delete(self.image.name)
-        super(ProductImage, self).delete(*args, **kwargs)
+    # Файл из хранилища удаляет django-cleanup (post_delete/при замене),
+    # в том числе при удалении через queryset.delete()
 
 
 #
@@ -106,13 +102,8 @@ def changed_product(sender, instance, **kwargs):
         create_history(sender=sender, instance=instance, type='single', **kwargs)
 
 
-@receiver(pre_delete, sender=Product)
-def delete_related_images(sender, instance, **kwargs):
-    # Удаление связанных изображений
-    for image in instance.pictures.all():
-        if image.image and default_storage.exists(image.image.name):
-            default_storage.delete(image.image.name)
-        image.delete()
+# Связанные ProductImage удаляются каскадом (on_delete=CASCADE),
+# их файлы из хранилища удаляет django-cleanup по post_delete.
 #
 #
 # @receiver(m2m_changed, sender=Product.prices.through)
