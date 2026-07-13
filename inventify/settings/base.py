@@ -33,7 +33,6 @@ THIRD_PARTY_APPS = [
     'django_celery_results',
     'django_json_widget',
     'eav',
-    # 'silk',
     'djangoql',
     'drf_api_logger',
 ]
@@ -66,9 +65,12 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'base.middlewares.RequestMiddleware.RequestMiddleware',
     'drf_api_logger.middleware.api_logger_middleware.APILoggerMiddleware'
-    # 'silk.middleware.SilkyMiddleware',
-
 ]
+
+# django-silk (профилировщик запросов) — только при DEBUG, в проде не подключается
+if DEBUG:
+    INSTALLED_APPS += ['silk']
+    MIDDLEWARE += ['silk.middleware.SilkyMiddleware']
 
 ROOT_URLCONF = 'inventify.urls'
 
