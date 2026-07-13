@@ -51,6 +51,11 @@ app.conf.beat_schedule = {
         'task': 'apps.order.tasks.import_orders_from_recar',
         'schedule': crontab(hour=2, minute=00)
     },
+
+    'Очистка логов drf-api-logger': {
+        'task': 'base.tasks.clean_drf_api_logs',
+        'schedule': crontab(hour=3, minute=0),
+    },
 }
 
 # Using a string here means the worker doesn't have to serialize

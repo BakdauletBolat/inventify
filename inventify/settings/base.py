@@ -262,3 +262,5 @@ LOGGING = {
 }
 
 DRF_API_LOGGER_DATABASE = True
+# Чувствительные ключи в теле запроса/ответа маскируются в логах
+DRF_API_LOGGER_EXCLUDE_KEYS = ['password', 'token', 'access', 'refresh', 'authorization']
