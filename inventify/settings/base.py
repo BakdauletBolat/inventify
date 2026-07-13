@@ -197,6 +197,8 @@ CELERY_TIMEZONE = "Asia/Oral"
 CELERY_TASK_TRACK_STARTED = True
 CELERY_TASK_TIME_LIMIT = 30 * 60
 CELERY_RESULT_BACKEND = 'django-db'
+# Результаты задач старше 7 дней удаляются задачей celery.backend_cleanup
+CELERY_RESULT_EXPIRES = 60 * 60 * 24 * 7
 CELERY_CACHE_BACKEND = 'django-cache'
 CELERY_BROKER_URL = os.environ.get('CELERY_BROKER_URL')
 # CELERY_IMPORTS = (

@@ -56,6 +56,12 @@ app.conf.beat_schedule = {
         'task': 'base.tasks.clean_drf_api_logs',
         'schedule': crontab(hour=3, minute=0),
     },
+
+    # Удаление результатов задач из django-celery-results старше CELERY_RESULT_EXPIRES
+    'Очистка результатов celery': {
+        'task': 'celery.backend_cleanup',
+        'schedule': crontab(hour=4, minute=0),
+    },
 }
 
 # Using a string here means the worker doesn't have to serialize
