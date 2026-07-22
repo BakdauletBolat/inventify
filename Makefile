@@ -1,18 +1,78 @@
+COMPOSE = docker compose
+
+# ============================================================
+# Деплой: подтянуть код с GitHub, пересобрать, поднять, почистить
+# ============================================================
+
+.PHONY: deploy
+deploy:                ## git pull -> build -> up -d -> migrate -> clean
+	git pull
+	$(COMPOSE) build
+	$(COMPOSE) up -d
+	$(MAKE) migrate
+	$(MAKE) clean
+
+# Безопасная чистка. Не трогает БД, фото (media_volume) и статику.
+# Запускается автоматически после каждого deploy.
+.PHONY: clean
+clean:                 ## journald + неиспользуемые образы + build-кэш + apt-кэш
+	-sudo journalctl --vacuum-size=300M
+	-docker image prune -a -f
+	-docker builder prune -f
+	-sudo apt-get clean
+	@echo "Чистка завершена (БД, фото и статика не затронуты)."
+
+# ============================================================
+# Разовая настройка лимитов логов (чтобы диск больше не забивался).
+# Запустить ОДИН раз на проде: make setup-logs
+# ============================================================
+
+.PHONY: setup-logs
+setup-logs:            ## лимит journald 300M + лимит логов контейнеров 50m x 3
+	# journald -> 300M
+	sudo sed -i 's/^#\?SystemMaxUse=.*/SystemMaxUse=300M/' /etc/systemd/journald.conf
+	grep -qE '^SystemMaxUse=' /etc/systemd/journald.conf || echo 'SystemMaxUse=300M' | sudo tee -a /etc/systemd/journald.conf
+	sudo systemctl restart systemd-journald
+	# docker log-opts -> 50m x 3 (только если daemon.json ещё нет)
+	@if [ -f /etc/docker/daemon.json ]; then \
+		echo "!! /etc/docker/daemon.json уже есть — не трогаю. Добавь log-opts вручную."; \
+	else \
+		printf '{\n  "log-driver": "json-file",\n  "log-opts": { "max-size": "50m", "max-file": "3" }\n}\n' | sudo tee /etc/docker/daemon.json; \
+		sudo systemctl restart docker; \
+		echo "daemon.json создан. Пересоздай контейнеры: make recreate"; \
+	fi
+	@echo "Лимиты логов настроены."
+
+# Пересоздать контейнеры, чтобы подхватили лимит логов Docker
+.PHONY: recreate
+recreate:              ## up -d --force-recreate (применить лимит логов к контейнерам)
+	$(COMPOSE) up -d --force-recreate
+
+# ============================================================
+# Management-команды приложения
+# ============================================================
+
+.PHONY: migrate
 migrate:
-	docker-compose exec web python manage migrate
+	$(COMPOSE) exec web poetry run python manage.py migrate
 
+.PHONY: seed
 seed:
-	docker-compose exec web python manage seed
-	docker-compose exec web python manage import_warehouse
+	$(COMPOSE) exec web poetry run python manage.py seed
+	$(COMPOSE) exec web poetry run python manage.py import_warehouse
 
+.PHONY: create_category
 create_category:
-	docker-compose exec web python manage create_category
+	$(COMPOSE) exec web poetry run python manage.py create_category
 
+.PHONY: create_cars
 create_cars:
-	docker-compose exec web python manage create_car_models
+	$(COMPOSE) exec web poetry run python manage.py create_car_models
 
+.PHONY: create_modifications
 create_modifications:
-	docker-compose exec web python manage import_modifications
+	$(COMPOSE) exec web poetry run python manage.py import_modifications
 
+.PHONY: create_engines
 create_engines:
-	docker-compose exec web python manage create_engines
+	$(COMPOSE) exec web poetry run python manage.py create_engines
