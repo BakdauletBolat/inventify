@@ -42,10 +42,9 @@ app.conf.beat_schedule = {
         'schedule': crontab(hour=00, minute=30)
     },
 
-    'Обновление цен продуктов': {
-        'task': 'apps.product.tasks.update_price',
-        'schedule': crontab(hour=00, minute=40)
-    },
+    # Обновление цен отключено: задача не нужна, а её реализация
+    # (apps.product.tasks.update_price) не зарегистрирована как celery-задача,
+    # поэтому beat каждую ночь ронял её с NotRegistered.
 
     'Импорт заказов': {
         'task': 'apps.order.tasks.import_orders_from_recar',

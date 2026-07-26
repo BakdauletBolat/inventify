@@ -49,18 +49,42 @@ def create_products_draft():
         import_product_draft.delay(product_data)
 
 
+# Размер порции для UPDATE ... WHERE id IN (...): при сотнях тысяч id
+# один запрос раздувает и память процесса, и план запроса в postgres.
+STATUS_UPDATE_BATCH_SIZE = 5000
+
+# Статус в Recar -> статус товара у нас
+RECAR_STATUS_MAP = (
+    ('not_parsed', StatusChoices.RAW),
+    ('in_stock', StatusChoices.IN_STOCK),
+    ('sold', StatusChoices.SOLD),
+    ('deleted', StatusChoices.DELETED),
+)
+
+
 @shared_task
 def update_status_products():
-    products_not_parsed = RecarRequest().get_products(['not_parsed'])
-    products_in_stock = RecarRequest().get_products(['in_stock'])
-    products_sold = RecarRequest().get_products(['sold'])
-    products_deleted = RecarRequest().get_products(['deleted'])
-    Product.objects.filter(id__in=get_products_id(products_not_parsed)).update(status=StatusChoices.RAW)
-    Product.objects.filter(id__in=get_products_id(products_in_stock)).update(status=StatusChoices.IN_STOCK)
-    Product.objects.filter(id__in=get_products_id(products_sold)).update(status=StatusChoices.SOLD)
-    Product.objects.filter(id__in=get_products_id(products_deleted)).update(status=StatusChoices.DELETED)
+    """Синхронизирует статусы товаров с Recar.
+
+    Статусы обрабатываются строго по одному, а обновление идёт порциями:
+    выборка Recar отдаёт до 200 000 записей на статус, и держать в памяти
+    все четыре списка сразу сервер не переживает.
+    """
+    for recar_status, status in RECAR_STATUS_MAP:
+        product_ids = get_products_id(RecarRequest().get_products([recar_status]))
+
+        for start in range(0, len(product_ids), STATUS_UPDATE_BATCH_SIZE):
+            batch_ids = product_ids[start:start + STATUS_UPDATE_BATCH_SIZE]
+            Product.objects.filter(id__in=batch_ids).update(status=status)
+
+        # Освобождаем память до следующего запроса в Recar
+        del product_ids
 
 
+# Задача отключена намеренно: обновление цен не используется, из beat_schedule убрано.
+# Прежде чем включать обратно — переписать: сейчас тут перебор всех цен вложенным
+# циклом (next(filter(...)) внутри цикла по товарам) и весь список Price в памяти,
+# на сотнях тысяч товаров это часы работы и сотни мегабайт.
 # @shared_task
 def update_price():
     products_recar = RecarRequest().get_products()
