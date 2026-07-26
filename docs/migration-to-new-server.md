@@ -132,8 +132,17 @@ Media (41 ГБ, 424 тыс. фото) не переносим — файлы у�
 `SQL_HOST=db` и `CELERY_BROKER_URL=redis://redis:...` — это имена
 docker-сервисов, они на новом сервере те же.
 
-- [ ] Убедиться, что в `/opt/inventify/.env` есть `DEBUG=0`, `USE_S3_MEDIA=1`
-      и в `DJANGO_ALLOWED_HOSTS` присутствует `back-kaynar.kz`.
+- [ ] **`DEBUG=0`** — со старого сервера приезжает `DEBUG=1`, и так оставлять
+      нельзя: при DEBUG подключается django-silk (профилирует каждый запрос
+      и пишет его в БД), Django копит все SQL-запросы в памяти воркера,
+      а страницы ошибок показывают настройки вместе с паролями и ключами S3.
+      ```bash
+      cd /opt/inventify
+      sed -i 's/^DEBUG=1/DEBUG=0/' .env
+      grep -E "^DEBUG=|^USE_S3_MEDIA=" .env      # DEBUG=0, USE_S3_MEDIA=1
+      ```
+      `DJANGO_ALLOWED_HOSTS` проверять не нужно: в `settings/base.py:15`
+      стоит `ALLOWED_HOSTS = ['*']`, переменную из `.env` код не читает.
 
 ### 1.6. Репетиция (сильно рекомендую)
 
@@ -161,9 +170,15 @@ docker compose -f docker-compose.prod.yml down -v      # -v удалит тес�
 
 ### 2.2. Снять дамп
 
+Данные django-silk из дампа исключаются: профайлер писал каждый SQL-запрос,
+пока прод работал с `DEBUG=1`, и накопил ~547 МБ (треть базы). На новом сервере
+`DEBUG=0`, silk не подключается — эти записи там не нужны. Саму базу на старом
+сервере это не меняет, данные просто не попадают в файл.
+
 - [ ] ```bash
       docker compose exec -T db sh -c \
-        'pg_dump -U "$POSTGRES_USER" -d "$POSTGRES_DB" -Fc --no-owner --no-privileges' \
+        'pg_dump -U "$POSTGRES_USER" -d "$POSTGRES_DB" -Fc --no-owner --no-privileges \
+           --exclude-table-data="silk_*"' \
         > /tmp/inventify.dump
       ls -lh /tmp/inventify.dump
       ```
