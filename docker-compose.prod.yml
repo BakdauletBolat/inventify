@@ -1,0 +1,144 @@
+# Прод-конфиг для сервера 2 vCPU / 1.9 ГБ RAM / без swap,
+# на котором уже работают хостовый nginx и Nuxt-маркетплейс kaynaravto.kz.
+#
+# Отличия от docker-compose.yml:
+#   - нет nginx и certbot: порты 80/443 занял хостовый nginx, он же проксирует back-kaynar.kz
+#   - нет flower (экономия ~60 МБ)
+#   - у каждого сервиса mem_limit: при нехватке памяти docker убьёт наш контейнер,
+#     а не Nuxt-прод маркетплейса
+#   - урезаны воркеры gunicorn и celery, gunicorn работает с --preload (общая память после fork)
+#   - порты БД и redis слушают только 127.0.0.1
+#   - media не монтируется: файлы живут в S3 PS.KZ (USE_S3_MEDIA=1)
+#   - staticfiles отдаёт хостовый nginx из /var/www/inventify/staticfiles
+#
+# Запуск:  docker compose -f docker-compose.prod.yml up -d
+
+x-logging: &default-logging
+  driver: json-file
+  options:
+    max-size: "20m"
+    max-file: "3"
+
+services:
+  web:
+    build: .
+    image: inventify-web:latest
+    restart: unless-stopped
+    # --preload: приложение импортируется один раз в мастере, воркеры получают его
+    # через fork и делят память копированием-при-записи. На 1.9 ГБ это экономит ~150 МБ.
+    # gthread вместо sync: 2 процесса держат 6 одновременных запросов вместо 2.
+    command: >
+      poetry run gunicorn inventify.wsgi:application
+      --bind 0.0.0.0:8000
+      --preload
+      --workers=2
+      --worker-class=gthread
+      --threads=3
+      --max-requests=500
+      --max-requests-jitter=100
+      --timeout=120
+      --graceful-timeout=30
+    ports:
+      - "127.0.0.1:8000:8000"
+    volumes:
+      - /var/www/inventify/staticfiles:/usr/src/app/staticfiles
+    env_file:
+      - .env
+    mem_limit: 380m
+    logging: *default-logging
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  celery-worker:
+    # Тот же образ, что и web — второй раз не собираем (экономия ~1.3 ГБ диска и времени сборки)
+    image: inventify-web:latest
+    restart: unless-stopped
+    # concurrency=1: на 2 vCPU параллелить нечем, а каждый доп. процесс это ~150 МБ.
+    # max-tasks-per-child=20: воркер перезапускается и отдаёт память после тяжёлых импортов.
+    # without-gossip/mingle/heartbeat: не нужны при единственном воркере, экономят память и трафик.
+    command: >
+      poetry run celery -A inventify worker --beat
+      --scheduler django
+      --loglevel=warning
+      --concurrency=1
+      --max-tasks-per-child=20
+      --prefetch-multiplier=1
+      --without-gossip
+      --without-mingle
+      --without-heartbeat
+    env_file:
+      - .env
+    mem_limit: 400m
+    logging: *default-logging
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  db:
+    image: postgres:13.0-alpine
+    restart: unless-stopped
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/
+    env_file:
+      - .env
+    environment:
+      POSTGRES_USER: ${SQL_USER}
+      POSTGRES_PASSWORD: ${SQL_PASSWORD}
+      POSTGRES_DB: ${SQL_DATABASE}
+    ports:
+      - "127.0.0.1:${SQL_PORT:-5432}:5432"
+    # Параметры под 1.9 ГБ RAM. Параллельные планы выключены: на 2 vCPU они
+    # только отнимают память, а max_connections=40 хватает при CONN_MAX_AGE=60.
+    command: >
+      postgres
+      -c max_connections=40
+      -c shared_buffers=128MB
+      -c effective_cache_size=384MB
+      -c work_mem=4MB
+      -c maintenance_work_mem=48MB
+      -c max_worker_processes=2
+      -c max_parallel_workers=2
+      -c max_parallel_workers_per_gather=0
+      -c wal_buffers=4MB
+      -c min_wal_size=128MB
+      -c max_wal_size=1GB
+      -c checkpoint_completion_target=0.9
+      -c random_page_cost=1.1
+    mem_limit: 320m
+    logging: *default-logging
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${SQL_USER} -d $${SQL_DATABASE}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:alpine
+    restart: unless-stopped
+    # Персистентность выключена намеренно: BGSAVE форкает процесс и кратковременно
+    # удваивает потребление памяти — на машине без swap это верный OOM.
+    # Терять тут нечего: в redis лежат только токен Recar и очередь celery,
+    # расписание beat хранится в БД.
+    command: >
+      redis-server
+      --save ""
+      --appendonly no
+      --maxmemory 48mb
+      --maxmemory-policy noeviction
+    ports:
+      - "127.0.0.1:6381:6379"
+    mem_limit: 80m
+    logging: *default-logging
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres_data:
