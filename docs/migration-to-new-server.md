@@ -30,8 +30,17 @@ Media (41 ГБ, 424 тыс. фото) не переносим — файлы у�
 
 ### 1.1. DNS
 
-- [ ] Понизить TTL A-записи `back-kaynar.kz` до **300 секунд**.
-      Ночью переключение займёт 5 минут вместо суток.
+- [ ] Понизить TTL A-записи `back-kaynar.kz` до **300 секунд** (панель PS.KZ).
+      Значение IP пока не трогаем. Менять TTL надо заранее — минимум за старый
+      TTL до переезда, иначе провайдеры будут сидеть на прежнем кеше.
+- [ ] `www.back-kaynar.kz` — это CNAME на `back-kaynar.kz`, отдельно переключать
+      его не нужно, он поедет за основным доменом. TTL у CNAME тоже на 300.
+- [ ] Проверить, покрывает ли текущий сертификат `www` (от этого зависит шаг 2.6):
+      ```bash
+      sudo openssl x509 -noout -text \
+        -in /home/dev/inventify/docker/certbot/conf/live/back-kaynar.kz/fullchain.pem \
+        | grep -A1 "Subject Alternative Name"
+      ```
 
 ### 1.2. Освободить память на новом сервере
 
@@ -235,17 +244,21 @@ docker compose -f docker-compose.prod.yml down -v      # -v удалит тес�
       sudo nginx -t && sudo systemctl reload nginx
       ```
       `nginx -t` обязателен: ошибка в конфиге уронит и маркетплейс.
-- [ ] Добавить HTTPS. Сертификат уже на месте, поэтому certbot просто
-      перевыпишет конфиг без обращения в Let's Encrypt:
+- [ ] Добавить HTTPS. Перенесённый сертификат покрывает оба имени
+      (`back-kaynar.kz` и `www.back-kaynar.kz`), поэтому certbot просто
+      перепишет конфиг, без обращения в Let's Encrypt и без проверки DNS:
       ```bash
-      sudo certbot --nginx -d back-kaynar.kz
+      sudo certbot --nginx -d back-kaynar.kz -d www.back-kaynar.kz
       # выбрать "1: Attempt to reinstall this existing certificate"
       sudo nginx -t && sudo systemctl reload nginx
       ```
 - [ ] Проверить HTTPS **до** переключения DNS, подменив резолв:
       ```bash
       curl -sik --resolve back-kaynar.kz:443:127.0.0.1 https://back-kaynar.kz/api/ | head -5
+      curl -sik --resolve www.back-kaynar.kz:443:127.0.0.1 https://www.back-kaynar.kz/api/ | head -5
       ```
+      Флаг `-k` тут только чтобы не спотыкаться о подмену резолва; ошибок про
+      имя сертификата быть не должно — проверь, что в выводе нет `SSL:`-предупреждений.
 - [ ] Убедиться, что маркетплейс не задет:
       ```bash
       curl -sI https://kaynaravto.kz | head -3
