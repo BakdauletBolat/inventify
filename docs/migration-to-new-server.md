@@ -36,10 +36,19 @@ Media (41 ГБ, 424 тыс. фото) не переносим — файлы у�
 ### 1.2. Освободить память на новом сервере
 
 - [ ] Отключить ненужные на виртуалке сервисы (освобождает ~250 МБ):
+      `fwupd` — обновление прошивок железа (сервер виртуальный),
+      `multipathd` — SAN-диски с несколькими путями (диск один),
+      `udisks2` — автомонтирование флешек (сервер без GUI).
       ```bash
       sudo systemctl disable --now fwupd multipathd udisks2
+      # multipathd поднимается сокет-активацией, его надо гасить отдельно
+      sudo systemctl disable --now multipathd.socket
+      sudo systemctl disable --now fwupd-refresh.timer
+
+      systemctl is-active fwupd multipathd udisks2 multipathd.socket   # все inactive
       free -h        # used должно упасть примерно с 774 Mi до ~520 Mi
       ```
+      Откат: `sudo systemctl enable --now fwupd multipathd udisks2`
 - [ ] Почистить протухшие сертификаты от снесённых проектов, чтобы
       `certbot renew` не ломился в Let's Encrypt по мёртвым доменам:
       ```bash
@@ -48,12 +57,39 @@ Media (41 ГБ, 424 тыс. фото) не переносим — файлы у�
       # ...и так для остальных EXPIRED, кроме kaynaravto.kz
       ```
 
-### 1.3. Подготовить папки на новом сервере
+### 1.3. Перенести проект на новый сервер
 
-- [ ] ```bash
+Переносим папку целиком через rsync, а не клонируем с GitHub: на новом сервере
+нет доступа к репозиторию, и заводить там ssh-ключ в ночь переезда — лишняя
+возня. Заодно приедут `.env` и история git.
+
+- [ ] На **новом**: создать папки
+      ```bash
       sudo mkdir -p /opt/inventify /var/www/inventify/staticfiles
-      cd /opt && sudo git clone <репозиторий> inventify && cd /opt/inventify
-      sudo git checkout master && sudo git pull
+      ```
+- [ ] На **старом**: подтянуть актуальный код (контейнеры при этом не
+      перезапускаются, прод продолжает работать)
+      ```bash
+      cd /home/dev/inventify
+      git pull
+      git log --oneline -3
+      ```
+- [ ] На **старом**: перенести папку (слеш в конце пути-источника обязателен)
+      ```bash
+      rsync -av \
+        --exclude 'media/' \
+        --exclude 'staticfiles/' \
+        --exclude 'logs/' \
+        --exclude '__pycache__/' \
+        /home/dev/inventify/ root@86.107.45.177:/opt/inventify/
+      ```
+- [ ] На **новом**: проверить, что доехало
+      ```bash
+      cd /opt/inventify
+      git branch --show-current            # in-8
+      git log --oneline -3
+      grep -E "USE_S3_MEDIA|DEBUG=" .env   # USE_S3_MEDIA=1, DEBUG=0
+      ls docker-compose.prod.yml docker/host-nginx/back-kaynar.conf
       ```
 
 ### 1.4. Собрать образ на старом сервере и перенести
@@ -81,13 +117,14 @@ Media (41 ГБ, 424 тыс. фото) не переносим — файлы у�
       rm /tmp/inventify-web.tgz
       ```
 
-### 1.5. Перенести `.env`
+### 1.5. Проверить `.env`
 
-- [ ] Скопировать `/home/dev/inventify/.env` в `/opt/inventify/.env`.
-      Менять в нём ничего не надо: `SQL_HOST=db` и `CELERY_BROKER_URL=redis://redis:...`
-      это имена docker-сервисов, они те же.
-- [ ] Проверить, что там `DEBUG=0`, `USE_S3_MEDIA=1` и в `DJANGO_ALLOWED_HOSTS`
-      есть `back-kaynar.kz`.
+`.env` приехал вместе с rsync на шаге 1.3, править в нём ничего не надо:
+`SQL_HOST=db` и `CELERY_BROKER_URL=redis://redis:...` — это имена
+docker-сервисов, они на новом сервере те же.
+
+- [ ] Убедиться, что в `/opt/inventify/.env` есть `DEBUG=0`, `USE_S3_MEDIA=1`
+      и в `DJANGO_ALLOWED_HOSTS` присутствует `back-kaynar.kz`.
 
 ### 1.6. Репетиция (сильно рекомендую)
 
