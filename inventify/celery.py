@@ -51,6 +51,19 @@ app.conf.beat_schedule = {
         'schedule': crontab(hour=2, minute=00)
     },
 
+    # Импорт товаров, созданных в Recar за последнюю неделю (фильтр createdAtFrom).
+    # Фильтра по дате изменения в GetPartsInput нет, поэтому правки старых
+    # товаров этой задачей не подхватываются.
+    'Импорт новых товаров': {
+        'task': 'apps.product.tasks.sync_recent_products',
+        'schedule': crontab(hour=5, minute=0),
+    },
+
+    'Очистка логов запросов в Recar': {
+        'task': 'base.tasks.clean_recar_request_logs',
+        'schedule': crontab(hour=3, minute=15),
+    },
+
     'Очистка логов drf-api-logger': {
         'task': 'base.tasks.clean_drf_api_logs',
         'schedule': crontab(hour=3, minute=0),

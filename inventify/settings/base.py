@@ -303,6 +303,13 @@ LOGGING = {
     },
 }
 
+# Лог запросов в Recar (base.models.RecarRequestLog)
+RECAR_REQUEST_LOG_ENABLED = int(os.environ.get('RECAR_REQUEST_LOG_ENABLED', 1))
+# Ответы больше лимита пишутся усечёнными: FetchParts на 200 000 записей
+# иначе положит и память процесса, и таблицу логов
+RECAR_REQUEST_LOG_MAX_RESPONSE_BYTES = int(os.environ.get('RECAR_REQUEST_LOG_MAX_RESPONSE_BYTES', 100 * 1024))
+RECAR_REQUEST_LOG_RETENTION_DAYS = int(os.environ.get('RECAR_REQUEST_LOG_RETENTION_DAYS', 14))
+
 DRF_API_LOGGER_DATABASE = True
 # Чувствительные ключи в теле запроса/ответа маскируются в логах
 DRF_API_LOGGER_EXCLUDE_KEYS = ['password', 'token', 'access', 'refresh', 'authorization']

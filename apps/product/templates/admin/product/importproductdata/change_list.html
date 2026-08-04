@@ -1,0 +1,10 @@
+{% extends "admin/change_list.html" %}
+
+{% block object-tools-items %}
+  <li>
+    <a href="{% url 'admin:product_importproductdata_recar_import' %}" class="addlink">
+      Импорт из Recar по ID
+    </a>
+  </li>
+  {{ block.super }}
+{% endblock %}

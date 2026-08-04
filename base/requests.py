@@ -1,5 +1,26 @@
+import time
+from datetime import datetime
+
 import requests
 from django.core.cache import cache
+
+from base.services.recar_request_log import log_request
+
+# Размер страницы при постраничном обходе товаров: страницу целиком держим
+# в памяти, поэтому не увеличиваем без нужды
+PARTS_PAGE_SIZE = 1000
+# Предохранитель от бесконечного обхода, если Recar перестал уважать сортировку
+PARTS_MAX_PAGES = 200
+
+
+def parse_recar_datetime(value):
+    """Разбирает дату Recar вида 2026-02-24T12:46:52+00:00, иначе возвращает None."""
+    if not value:
+        return None
+    try:
+        return datetime.fromisoformat(value)
+    except (TypeError, ValueError):
+        return None
 
 
 class Request:
@@ -29,11 +50,8 @@ class Request:
         if token:
             return token
 
-        response = requests.post(
-            url=self.url,
-            json=data,
-        )
-        token = response.json()['data']['obtainTokens']['tokens']['accessToken']
+        response = self._request(data, with_auth=False)
+        token = response['data']['obtainTokens']['tokens']['accessToken']
 
         if token:
             self.save_token_to_cache(token)
@@ -51,13 +69,47 @@ class Request:
         return response.json()
 
     def post(self, body):
-        response = requests.post(self.url, json=body, headers={
-            'Authorization': 'Bearer ' + self.get_token(),
+        return self._request(body)
+
+    def _request(self, body, with_auth=True):
+        """Отправляет запрос в Recar и пишет его в RecarRequestLog.
+
+        with_auth=False используется получением токена: там ещё нет
+        Authorization, а логировать запрос всё равно нужно — ошибки
+        авторизации иначе не видно.
+        """
+        headers = {
             'Accept': 'application/json',
             'Cookie': 'app-locale=ru;'
-        }, timeout=120)
+        }
+        if with_auth:
+            headers['Authorization'] = 'Bearer ' + self.get_token()
 
-        return response.json()
+        started = time.monotonic()
+        status_code = None
+        payload = None
+        error = ''
+        try:
+            response = requests.post(self.url, json=body, headers=headers, timeout=120)
+            status_code = response.status_code
+            try:
+                payload = response.json()
+            except ValueError:
+                error = f'Ответ Recar не является JSON (HTTP {status_code}): {response.text[:1000]}'
+                raise
+            return payload
+        except Exception as exc:
+            if not error:
+                error = f'{type(exc).__name__}: {exc}'
+            raise
+        finally:
+            log_request(
+                body,
+                response=payload,
+                status_code=status_code,
+                duration_ms=int((time.monotonic() - started) * 1000),
+                error=error,
+            )
 
 
 class RecarRequest(Request):
@@ -198,15 +250,168 @@ class RecarRequest(Request):
         response = self.post(data)
         return response['data']['parts']['nodes']
 
+    def get_product_ids_after(self, from_product_id: int, limit=None, statuses=None):
+        """ID товаров Recar, которые больше `from_product_id`, по возрастанию.
+
+        Берём реальные ID из выборки Recar, а не перебираем числа подряд:
+        в Recar ID разрежённые, инкремент упирался бы в несуществующие товары.
+        """
+        product_ids = sorted(
+            product_id
+            for product_id in (int(product['id']) for product in self.get_products(statuses))
+            if product_id > from_product_id
+        )
+        if limit is not None:
+            return product_ids[:limit]
+        return product_ids
+
+    def get_products_updated_since(self, since: datetime, statuses=None, page_size=PARTS_PAGE_SIZE,
+                                   max_pages=PARTS_MAX_PAGES):
+        """ID товаров, изменённых в Recar не раньше `since`.
+
+        Фильтра по дате изменения в GetPartsInput нет, но сортировать по ней
+        можно: PartSort{column: PartColumn} и PartColumn содержит updated_at.
+        Поэтому идём страницами от самых свежих и останавливаемся на первой
+        записи старше `since`. Покрывает и новые товары: updatedAt у них
+        не раньше createdAt.
+        """
+        if statuses is None:
+            statuses = ["not_parsed", "in_stock", "reserved", "sold"]
+
+        product_ids = []
+        for page in range(1, max_pages + 1):
+            data = {
+                "operationName": "FetchPartsUpdated",
+                "variables": {
+                    "payload": {
+                        "statuses": statuses,
+                        "defaultQuery": False,
+                        "departmentIds": "9182",
+                        "partnership": False,
+                        "isRootsChild": True,
+                        "nearestParentId": None
+                    },
+                    "page": str(page),
+                    "size": str(page_size),
+                    "sort": {
+                        "column": "updated_at",
+                        "order": "desc"
+                    }
+                },
+                "query": "query FetchPartsUpdated($payload: GetPartsInput, $size: Int, $page: Int, $sort: PartSort) {\n  parts(payload: $payload, size: $size, page: $page, sort: $sort) {\n    nodes {\n      id\n      updatedAt\n      __typename\n    }\n    __typename\n  }\n}\n"
+            }
+            response = self.post(data)
+
+            if response.get('errors'):
+                raise ValueError(f'Recar отклонил FetchPartsUpdated: {response["errors"]}')
+
+            nodes = (response.get('data') or {}).get('parts', {}).get('nodes') or []
+            if not nodes:
+                break
+
+            for node in nodes:
+                updated_at = parse_recar_datetime(node.get('updatedAt'))
+                if updated_at is not None and updated_at < since:
+                    return product_ids
+                product_ids.append(int(node['id']))
+
+            if len(nodes) < page_size:
+                break
+
+        return product_ids
+
+    def get_products_created_since(self, since: datetime, statuses=None, page_size=PARTS_PAGE_SIZE,
+                                   max_pages=PARTS_MAX_PAGES):
+        """ID товаров, созданных в Recar не раньше `since`, постранично.
+
+        Фильтруем на стороне Recar через createdAtFrom. Фильтра по дате
+        изменения в GetPartsInput нет вообще (есть только createdAtFrom/To,
+        pricedAtFrom/To, taskDateFrom/To — см. `recar_introspect GetPartsInput`),
+        поэтому «за последнюю неделю» — это именно новые товары.
+        """
+        if statuses is None:
+            statuses = ["not_parsed", "in_stock", "reserved", "sold"]
+
+        product_ids = []
+        for page in range(1, max_pages + 1):
+            data = {
+                "operationName": "FetchPartsCreatedFrom",
+                "variables": {
+                    "payload": {
+                        "statuses": statuses,
+                        "defaultQuery": False,
+                        "departmentIds": "9182",
+                        "partnership": False,
+                        "isRootsChild": True,
+                        "nearestParentId": None,
+                        "createdAtFrom": since.isoformat()
+                    },
+                    "page": str(page),
+                    "size": str(page_size)
+                },
+                "query": "query FetchPartsCreatedFrom($payload: GetPartsInput, $size: Int, $page: Int) {\n  parts(payload: $payload, size: $size, page: $page) {\n    nodes {\n      id\n      createdAt\n      __typename\n    }\n    __typename\n  }\n}\n"
+            }
+            response = self.post(data)
+
+            if response.get('errors'):
+                raise ValueError(f'Recar отклонил FetchPartsCreatedFrom: {response["errors"]}')
+
+            nodes = (response.get('data') or {}).get('parts', {}).get('nodes') or []
+            if not nodes:
+                break
+
+            product_ids.extend(int(node['id']) for node in nodes)
+
+            if len(nodes) < page_size:
+                break
+
+        return product_ids
+
+    def introspect_types(self):
+        """Список всех типов схемы Recar: имя и вид (OBJECT, INPUT_OBJECT, ENUM…)."""
+        data = {
+            "operationName": "IntrospectTypes",
+            "variables": {},
+            "query": "query IntrospectTypes {\n  __schema {\n    queryType {\n      name\n    }\n    mutationType {\n      name\n    }\n    types {\n      name\n      kind\n    }\n  }\n}\n"
+        }
+        response = self.post(data)
+        if response.get('errors'):
+            raise ValueError(f'Recar отклонил интроспекцию схемы: {response["errors"]}')
+        return (response.get('data') or {}).get('__schema') or {}
+
+    def introspect_type(self, type_name: str):
+        """Возвращает описание типа схемы Recar (поля ввода, поля, значения enum).
+
+        Нужна, чтобы не угадывать имена фильтров и колонок сортировки.
+        """
+        data = {
+            "operationName": "IntrospectType",
+            "variables": {
+                "name": type_name
+            },
+            "query": "query IntrospectType($name: String!) {\n  __type(name: $name) {\n    name\n    kind\n    inputFields {\n      name\n      type {\n        name\n        kind\n        ofType {\n          name\n          kind\n          ofType {\n            name\n            kind\n          }\n        }\n      }\n    }\n    fields {\n      name\n      type {\n        name\n        kind\n        ofType {\n          name\n          kind\n        }\n      }\n    }\n    enumValues {\n      name\n    }\n  }\n}\n"
+        }
+        response = self.post(data)
+        if response.get('errors'):
+            raise ValueError(f'Recar отклонил интроспекцию: {response["errors"]}')
+        return (response.get('data') or {}).get('__type')
+
     def get_product(self, product_id: int):
         data = {
             "operationName": "FetchPart",
             "variables": {
                 "id": product_id
             },
-            "query": "query FetchPart($id: ID) {\n  part(id: $id) {\n    ...Part\n    __typename\n  }\n}\n\nfragment Part on Part {\n  id\n  createdAt\n  updatedAt\n  price\n  defective\n  status\n  comment\n  qrComment\n  colorCode\n  defectComment\n  deleteComment\n  sellPrice\n  suggestedPrice {\n    previousYear\n    previousMonth\n    previousPrice\n    currentYear\n    currentMonth\n    currentPrice\n    percentage\n    __typename\n  }\n  deleted\n  orderId\n  height\n  width\n  length\n  weight\n  groupedSaleId\n  nearestParentId\n  dalysltPart {\n    price\n    link\n    enabled\n    __typename\n  }\n  tasks {\n    id\n    type\n    assignedUser {\n      id\n      firstname\n      lastname\n      __typename\n    }\n    completeDate\n    status\n    parentTaskId\n    __typename\n  }\n  children {\n    id\n    nearestParentId\n    price\n    status\n    quantity\n    originalPartId\n    inputNearestParent {\n      id\n      __typename\n    }\n    tasks {\n      id\n      name\n      type\n      assignedUser {\n        id\n        firstname\n        lastname\n        __typename\n      }\n      completeDate\n      status\n      parentTaskId\n      __typename\n    }\n    category {\n      id\n      name\n      isPart\n      __typename\n    }\n    __typename\n  }\n  department {\n    id\n    name\n    vehicleType\n    partsQuantityEnabled\n    tasksFlowEnabled\n    __typename\n  }\n  oemCodes {\n    id\n    code\n    __typename\n  }\n  category {\n    ...PartCategory\n    __typename\n  }\n  location {\n    id\n    name\n    __typename\n  }\n  suggestedLocation {\n    id\n    name\n    __typename\n  }\n  inputParent {\n    id\n    isGroupedSale\n    comment\n    oemCodes {\n      id\n      code\n      __typename\n    }\n    location {\n      id\n      name\n      __typename\n    }\n    category {\n      id\n      name\n      __typename\n    }\n     __typename\n  }\n  inputNearestParent {\n    id\n    isGroupedSale\n    comment\n    category {\n      ...PartCategory\n      __typename\n    }\n    location {\n      id\n      name\n      __typename\n    }\n    oemCodes {\n      id\n      code\n      __typename\n    }\n       __typename\n  }\n  inputUser {\n    id\n    picture {\n      id\n      url\n      __typename\n    }\n    firstname\n    lastname\n    __typename\n  }\n  amazonEnabled\n  quantity\n  originalPartId\n  visible\n  isWheel\n  vehicleType\n  __typename\n}\n\nfragment PartCategory on PartCategory {\n  id\n  name\n  isPart\n  ebayUkId\n  ebayUsId\n  ebayDeId\n  __typename\n}\n"        }
+            "query": "query FetchPart($id: ID) {\n  part(id: $id) {\n    ...Part\n    __typename\n  }\n}\n\nfragment Part on Part {\n  id\n  createdAt\n  updatedAt\n  price\n  defective\n  status\n  comment\n  qrComment\n  colorCode\n  defectComment\n  deleteComment\n  sellPrice\n  suggestedPrice\n  deleted\n  orderId\n  height\n  width\n  length\n  weight\n  groupedSaleId\n  nearestParentId\n  dalysltPart {\n    price\n    link\n    enabled\n    __typename\n  }\n  tasks {\n    id\n    type\n    assignedUser {\n      id\n      firstname\n      lastname\n      __typename\n    }\n    completeDate\n    status\n    parentTaskId\n    __typename\n  }\n  children {\n    id\n    nearestParentId\n    price\n    status\n    quantity\n    originalPartId\n    inputNearestParent {\n      id\n      __typename\n    }\n    tasks {\n      id\n      name\n      type\n      assignedUser {\n        id\n        firstname\n        lastname\n        __typename\n      }\n      completeDate\n      status\n      parentTaskId\n      __typename\n    }\n    category {\n      id\n      name\n      isPart\n      __typename\n    }\n    __typename\n  }\n  department {\n    id\n    name\n    vehicleType\n    partsQuantityEnabled\n    tasksFlowEnabled\n    __typename\n  }\n  oemCodes {\n    id\n    code\n    __typename\n  }\n  category {\n    ...PartCategory\n    __typename\n  }\n  location {\n    id\n    name\n    __typename\n  }\n  suggestedLocation {\n    id\n    name\n    __typename\n  }\n  inputParent {\n    id\n    isGroupedSale\n    comment\n    oemCodes {\n      id\n      code\n      __typename\n    }\n    location {\n      id\n      name\n      __typename\n    }\n    category {\n      id\n      name\n      __typename\n    }\n     __typename\n  }\n  inputNearestParent {\n    id\n    isGroupedSale\n    comment\n    category {\n      ...PartCategory\n      __typename\n    }\n    location {\n      id\n      name\n      __typename\n    }\n    oemCodes {\n      id\n      code\n      __typename\n    }\n       __typename\n  }\n  inputUser {\n    id\n    picture {\n      id\n      url\n      __typename\n    }\n    firstname\n    lastname\n    __typename\n  }\n  amazonEnabled\n  quantity\n  originalPartId\n  visible\n  isWheel\n  vehicleType\n  __typename\n}\n\nfragment PartCategory on PartCategory {\n  id\n  name\n  isPart\n  ebayUkId\n  ebayUsId\n  ebayDeId\n  __typename\n}\n"        }
 
         response = self.post(data)
+
+        # Без явной проверки ошибка схемы выглядела как KeyError('data'):
+        # так мы месяцами не замечали, что suggestedPrice стал скаляром
+        # и Recar отклонял весь запрос.
+        if response.get('errors'):
+            raise ValueError(f'Recar отклонил FetchPart для товара {product_id}: {response["errors"]}')
+
         return response['data']['part']
 
     def get_product_modification(self, product_id: int):

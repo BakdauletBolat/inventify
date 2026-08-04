@@ -45,6 +45,23 @@ def clean_drf_api_logs():
 
 
 @shared_task
+def clean_recar_request_logs():
+    """Ретенция логов запросов в Recar (см. RecarRequestLog).
+
+    Срок хранения — RECAR_REQUEST_LOG_RETENTION_DAYS, по умолчанию 14 дней:
+    лог нужен для разбора свежих расхождений, архив за месяцы не нужен.
+    """
+    from django.conf import settings
+
+    from base.models import RecarRequestLog
+
+    days = getattr(settings, 'RECAR_REQUEST_LOG_RETENTION_DAYS', 14)
+    border = timezone.now() - timedelta(days=days)
+    deleted = _delete_in_chunks(RecarRequestLog.objects.filter(created_at__lt=border))
+    return {'deleted': deleted, 'days': days}
+
+
+@shared_task
 def clear_expired_sessions():
     """Удаляет истёкшие сессии из django_session (management-команда clearsessions)."""
     call_command('clearsessions')

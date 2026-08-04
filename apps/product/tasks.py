@@ -1,4 +1,7 @@
+from datetime import timedelta
+
 from celery import shared_task
+from django.utils import timezone
 
 from apps.product.enums import StatusChoices
 from apps.product.models import Product
@@ -21,6 +24,36 @@ def import_product_draft(product_id: int):
     request = RecarRequest()
     product_data = request.get_product(product_id)
     ImportProductData.objects.create(product_id=product_id, data=product_data)
+
+
+@shared_task
+def sync_product_from_recar(product_id: int, update_product: bool = True):
+    """Обновляет снапшот товара из Recar и переливает его в основную базу."""
+    from apps.product.actions import RecarProductSyncAction
+    return RecarProductSyncAction().sync(product_id, update_product=update_product)
+
+
+# Сколько дней назад смотреть в ночной синхронизации изменённых товаров
+RECENT_SYNC_DAYS = 7
+
+
+@shared_task
+def sync_recent_products(days: int = RECENT_SYNC_DAYS):
+    """Обновляет товары, изменённые в Recar за последние `days` дней.
+
+    Ловит и новые, и отредактированные: обходим выборку, отсортированную по
+    updated_at. Раньше автоматически обновлялись только статусы
+    (update_status_products), остальные поля — габариты, категория, цена,
+    комментарии — не обновлялись никогда, потому что ImportProductAction
+    умел только создавать новые товары.
+    """
+    since = timezone.now() - timedelta(days=days)
+    product_ids = RecarRequest().get_products_updated_since(since)
+
+    for product_id in product_ids:
+        sync_product_from_recar.delay(product_id)
+
+    return {'days': days, 'products': len(product_ids)}
 
 
 @shared_task
