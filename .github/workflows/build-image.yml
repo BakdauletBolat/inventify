@@ -1,0 +1,97 @@
+name: Сборка и публикация образа
+
+# Прод-сервер (1.9 ГБ RAM без swap) не может собирать образ сам — `poetry install`
+# на Alpine компилирует pillow и gevent из исходников и уходит в OOM. Поэтому
+# образ собирается здесь, а на сервере остаётся только `docker compose pull`.
+
+on:
+  push:
+    branches: [in-8, master]
+    # Правки в документации образ не меняют — сборку не запускают
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+  workflow_dispatch:
+
+env:
+  REGISTRY: ghcr.io
+  # Имя образа в ghcr должно быть в нижнем регистре
+  IMAGE_NAME: ghcr.io/bakdauletbolat/inventify
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker/setup-buildx-action@v3
+
+      # Сборка без публикации: сначала проверяем образ, потом пушим.
+      # Сервер x86, раннер тоже — эмуляция не нужна.
+      - name: Собрать образ
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          platforms: linux/amd64
+          load: true
+          tags: inventify-web:ci
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      # Ловит поломки уровня "приложение не импортируется": именно так однажды
+      # уехал в прод образ, где воркеры падали при старте.
+      - name: Проверить, что приложение поднимается
+        run: |
+          docker run --rm \
+            -e SECRET_KEY=ci-smoke-test \
+            -e DEBUG=0 \
+            -e CELERY_BROKER_URL=redis://localhost:6379/0 \
+            -e CELERY_CACHE_URL=redis://localhost:6379/1 \
+            inventify-web:ci \
+            poetry run python manage.py check
+
+      - name: Показать версии зависимостей
+        run: docker run --rm inventify-web:ci poetry run pip list
+
+      - name: Войти в ghcr
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # Два тега: подвижный по имени ветки (его тянет сервер) и неизменяемый
+      # по коммиту — на него откатываются, если свежий образ оказался плохим.
+      - name: Теги
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.IMAGE_NAME }}
+          tags: |
+            type=ref,event=branch
+            type=sha,format=long
+
+      - name: Опубликовать
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          platforms: linux/amd64
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Как выкатить
+        run: |
+          echo "Образ собран. На сервере:"
+          echo "  cd /opt/inventify && git pull"
+          echo "  docker compose -f docker-compose.prod.yml pull"
+          echo "  docker compose -f docker-compose.prod.yml up -d"
+          echo ""
+          echo "Откат на этот коммит:"
+          echo "  INVENTIFY_IMAGE=${{ env.IMAGE_NAME }}:sha-${{ github.sha }}"

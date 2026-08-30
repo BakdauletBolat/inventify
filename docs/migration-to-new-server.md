@@ -343,19 +343,13 @@ docker compose -f docker-compose.prod.yml down -v      # -v удалит тес�
 
 ## После переезда: чем деплоить
 
-`make deploy` на новом сервере **работать не будет** — там `docker compose build`,
-который на 1.9 ГБ без swap уходит в OOM. Пока старый сервер жив, можно собирать
-на нём и переносить образ (шаг 1.4). Дальше нужен один из вариантов:
+Собирать образ на прод-сервере нельзя — `docker compose build` на 1.9 ГБ без
+swap уходит в OOM. Сборка вынесена в GitHub Actions, деплой сводится к
+`make deploy`. Подробности — в [deploy.md](deploy.md).
 
-- **Сборка через GitHub Actions** в GHCR, на сервере только `docker compose pull && up -d`.
-  Правильный вариант, требует настройки CI.
-- **Сборка на ноутбуке** и пуш в Docker Hub:
-  `docker buildx build --platform linux/amd64 -t <user>/inventify-web:latest --push .`
-  Настройки не требует вообще, но на Apple Silicon сборка идёт через эмуляцию
-  и занимает 15-30 минут.
-
-Заодно стоит перевести Dockerfile на multi-stage и выбросить `gcc`/`build-base`
-из финального образа — 1.34 ГБ ужмётся примерно втрое.
+Осталось сделать: перевести Dockerfile на multi-stage и выбросить
+`gcc`/`build-base` из финального образа — 1.36 ГБ ужмётся примерно втрое,
+и `docker pull` на слабом сервере станет заметно быстрее.
 
 ---
 

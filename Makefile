@@ -1,16 +1,30 @@
 COMPOSE = docker compose
+COMPOSE_PROD = docker compose -f docker-compose.prod.yml
 
 # ============================================================
-# Деплой: подтянуть код с GitHub, пересобрать, поднять, почистить
+# Деплой на прод: подтянуть код и готовый образ, поднять, почистить
+#
+# Образ собирается в GitHub Actions и лежит в ghcr — на прод-сервере
+# 1.9 ГБ RAM без swap, `docker compose build` там уходит в OOM.
 # ============================================================
 
 .PHONY: deploy
-deploy:                ## git pull -> build -> up -d -> migrate -> clean
+deploy:                ## git pull -> pull образа -> up -d -> migrate -> clean
 	git pull
-	$(COMPOSE) build
-	$(COMPOSE) up -d
-	$(MAKE) migrate
+	$(COMPOSE_PROD) pull
+	$(COMPOSE_PROD) up -d
+	$(MAKE) migrate-prod
 	$(MAKE) clean
+
+.PHONY: migrate-prod
+migrate-prod:
+	$(COMPOSE_PROD) exec web poetry run python manage.py migrate
+	$(COMPOSE_PROD) exec web poetry run python manage.py collectstatic --noinput
+
+# Откат на предыдущий образ: посмотреть теги и запустить нужный
+.PHONY: rollback-list
+rollback-list:         ## показать скачанные образы приложения
+	docker images ghcr.io/bakdauletbolat/inventify --format '{{.Tag}}\t{{.CreatedSince}}'
 
 # Безопасная чистка. Не трогает БД, фото (media_volume) и статику.
 # Запускается автоматически после каждого deploy.

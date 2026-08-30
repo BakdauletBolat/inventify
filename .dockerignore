@@ -1,1 +1,32 @@
+# Секреты — чтобы локальная сборка не запекла .env в образ
+# (образ публикуется в ghcr публичного репозитория)
+.env
+.env.*
+!.env.example
+
+# Окружения и кеши
 .venv/
+env/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.coverage
+
+# История git в образе не нужна, а весит заметно
+.git/
+.github/
+.idea/
+
+# Данные: media живёт в S3, staticfiles собирается через collectstatic
+# и монтируется с хоста, логи пишутся в докер.
+# Корневую static/ не исключаем — это единственный источник статики в проекте.
+media/
+staticfiles/
+logs/
+*.sqlite3
+dump.rdb
+celerybeat-schedule.db
+
+# Документация
+docs/
+*.md

@@ -19,10 +19,15 @@ x-logging: &default-logging
     max-size: "20m"
     max-file: "3"
 
+# Образ собирается в GitHub Actions (.github/workflows/build-image.yml) и берётся
+# из ghcr — секции build здесь намеренно нет: собирать на этом сервере нельзя,
+# poetry install уходит в OOM. Чтобы откатиться на конкретный коммит, пропишите
+# в .env: INVENTIFY_IMAGE=ghcr.io/bakdauletbolat/inventify:sha-<полный хеш>
+x-image: &app_image ${INVENTIFY_IMAGE:-ghcr.io/bakdauletbolat/inventify:in-8}
+
 services:
   web:
-    build: .
-    image: inventify-web:latest
+    image: *app_image
     restart: unless-stopped
     # --preload: приложение импортируется один раз в мастере, воркеры получают его
     # через fork и делят память копированием-при-записи. На 1.9 ГБ это экономит ~150 МБ.
@@ -57,8 +62,8 @@ services:
         condition: service_healthy
 
   celery-worker:
-    # Тот же образ, что и web — второй раз не собираем (экономия ~1.3 ГБ диска и времени сборки)
-    image: inventify-web:latest
+    # Тот же образ, что и web
+    image: *app_image
     restart: unless-stopped
     # concurrency=1: на 2 vCPU параллелить нечем, а каждый доп. процесс это ~150 МБ.
     # max-tasks-per-child=20: воркер перезапускается и отдаёт память после тяжёлых импортов.
