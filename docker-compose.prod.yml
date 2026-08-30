@@ -29,6 +29,7 @@ services:
     # gthread вместо sync: 2 процесса держат 6 одновременных запросов вместо 2.
     command: >
       poetry run gunicorn inventify.wsgi:application
+      -c /usr/src/app/docker/prod/gunicorn.conf.py
       --bind 0.0.0.0:8000
       --preload
       --workers=2
@@ -42,6 +43,9 @@ services:
       - "127.0.0.1:8000:8000"
     volumes:
       - /var/www/inventify/staticfiles:/usr/src/app/staticfiles
+      # Конфиг монтируется, а не берётся из образа: пересборка образа на этом
+      # сервере невозможна (1.9 ГБ без swap — OOM), а править хук нужно уметь.
+      - ./docker/prod/gunicorn.conf.py:/usr/src/app/docker/prod/gunicorn.conf.py:ro
     env_file:
       - .env
     mem_limit: 380m
