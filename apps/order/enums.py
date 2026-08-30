@@ -26,13 +26,19 @@ class OrderStatusChoices(models.IntegerChoices):
     DELETED = 5, 'Удален'
 
 
-class OrderStatusChoicesRecar(models.IntegerChoices):
-    ready = 1
-    done = 2
-    declined = 3
+# Статусы и типы оплаты приходят из Recar строками, и их набор пополняется на
+# стороне Recar. Раньше здесь были IntegerChoices, и неизвестное значение
+# роняло импорт заказа целиком (KeyError: 'processing'), поэтому теперь это
+# обычные словари с безопасным разбором в RecarOrderMapping.
+RECAR_ORDER_STATUS_MAP = {
+    'ready': OrderStatusChoices.PROCESSING,
+    'processing': OrderStatusChoices.PROCESSING,
+    'done': OrderStatusChoices.COMPLETED,
+    'declined': OrderStatusChoices.CANCELED,
+}
 
-
-class PaymentTypeChoicesRecar(models.IntegerChoices):
-    cash = 1,
-    bank = 2
-    prepaid = 3
+RECAR_PAYMENT_TYPE_MAP = {
+    'cash': PaymentTypeChoices.CASH,
+    'bank': PaymentTypeChoices.INTERNET_PAYMENT,
+    'prepaid': PaymentTypeChoices.PREPAID,
+}

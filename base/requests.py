@@ -71,6 +71,24 @@ class Request:
     def post(self, body):
         return self._request(body)
 
+    @staticmethod
+    def _nodes(response, field, operation):
+        """Достаёт `data.<field>.nodes` из ответа Recar.
+
+        Обращаться к `response['data']` напрямую нельзя: когда Recar отвечает
+        ошибкой (протухший токен, неизвестный id, лимит запросов), ключа `data`
+        в ответе нет вовсе — раньше это давало невнятный `KeyError: 'data'`
+        посреди ночного импорта.
+        """
+        if response.get('errors'):
+            raise ValueError(f'Recar отклонил {operation}: {response["errors"]}')
+
+        node = (response.get('data') or {}).get(field)
+        if node is None:
+            raise ValueError(f'Recar не вернул {field} в ответе на {operation}: {response}')
+
+        return node.get('nodes') or []
+
     def _request(self, body, with_auth=True):
         """Отправляет запрос в Recar и пишет его в RecarRequestLog.
 
@@ -196,7 +214,7 @@ class RecarRequest(Request):
             "query": "query fetchModels($payload: GetModelsInput, $page: Int, $size: Int) {\n  models(payload: $payload, page: $page, size: $size) {\n    nodes {\n      name: title\n      id\n      endDate\n      startDate\n      __typename\n    }\n    __typename\n  }\n}\n"
         }
         response = self.post(data)
-        return response['data']['models']['nodes']
+        return self._nodes(response, 'models', 'fetchModels')
 
     def get_modifications(self, modelId: int):
         data = {
@@ -212,7 +230,7 @@ class RecarRequest(Request):
             "query": "query fetchModifications($payload: GetModificationsInput, $page: Int, $size: Int) {\n  modifications(payload: $payload, page: $page, size: $size) {\n    nodes {\n      ...Modification\n      __typename\n    }\n    __typename\n  }\n}\n\nfragment Modification on Modification {\n  id\n  name: title\n  fullTitle\n  type\n  modelId\n  startDate\n  endDate\n  bodyType\n  driveType\n  fuelType\n  gearType\n  power\n  numOfCyl\n  numOfValves\n  capacity\n  platformType\n  axleConfiguration\n  suspensionTypes {\n    id\n    name\n    __typename\n  }\n  __typename\n}\n"
         }
         response = self.post(data)
-        return response['data']['modifications']['nodes']
+        return self._nodes(response, 'modifications', 'fetchModifications')
 
     def get_engines(self, modificationId: int):
         data = {
@@ -226,7 +244,7 @@ class RecarRequest(Request):
             "query": "query getEngines($payload: GetEnginesInput) {\n  engines(payload: $payload) {\n    nodes {\n      id\n      name: title\n      __typename\n    }\n    __typename\n  }\n}\n"
         }
         response = self.post(data)
-        return response['data']['engines']['nodes']
+        return self._nodes(response, 'engines', 'getEngines')
 
     def get_products(self, statuses=None):
         if statuses is None:

@@ -1,3 +1,4 @@
+import logging
 from typing import List
 
 from django.core.exceptions import ValidationError
@@ -12,15 +13,42 @@ from apps.stock.actions import StockAction
 from apps.stock.models import Warehouse
 
 
+logger = logging.getLogger(__name__)
+
+
+def _map_recar_value(mapping, raw_value, default, field_name, order_id):
+    """Переводит значение Recar в наше перечисление.
+
+    Recar заводит новые статусы и типы оплаты, не предупреждая. Неизвестное
+    значение не должно ронять импорт всего заказа: подставляем значение по
+    умолчанию и пишем предупреждение, чтобы расхождение было видно в логах.
+    """
+    try:
+        return mapping[raw_value]
+    except KeyError:
+        logger.warning(
+            'Recar прислал неизвестный %s=%r у заказа %s — подставлено %s',
+            field_name, raw_value, order_id, default.label,
+        )
+        return default
+
+
 class ImportOrderAction:
     def run(self, order_data: dict):
+        order_id = order_data['id']
 
         order = Order(
-            id=order_data['id'],
-            payment_type=PaymentTypeChoicesRecar.__getitem__(name=order_data['paymentType']),
+            id=order_id,
+            payment_type=_map_recar_value(
+                RECAR_PAYMENT_TYPE_MAP, order_data['paymentType'],
+                PaymentTypeChoices.CASH, 'paymentType', order_id,
+            ),
             payment_status=PaymentStatusChoices.PAID if order_data['paymentCompleted'] else PaymentStatusChoices.FAILED,
             status=
-            OrderStatusChoicesRecar.__getitem__(name=order_data['status'])
+            _map_recar_value(
+                RECAR_ORDER_STATUS_MAP, order_data['status'],
+                OrderStatusChoices.PROCESSING, 'status', order_id,
+            )
             if order_data['returning'] is False
             else OrderStatusChoices.REFUNDED,
             total=order_data['totalPrice'],
