@@ -1,7 +1,11 @@
 COMPOSE = docker compose
 COMPOSE_PROD = docker compose -f docker-compose.prod.yml
 
-IMAGE ?= ghcr.io/bakdauletbolat/inventify
+# Имя образа выводится из git-remote: в ghcr пространство имён совпадает с
+# владельцем репозитория, и запушить в чужое нельзя (permission_denied:
+# create_package). Так имя само поедет за репозиторием при смене origin.
+REPO_SLUG := $(shell git remote get-url origin | sed 's|\.git$$||' | tr ':' '/' | rev | cut -d/ -f1,2 | rev | tr '[:upper:]' '[:lower:]')
+IMAGE ?= ghcr.io/$(REPO_SLUG)
 BRANCH := $(shell git rev-parse --abbrev-ref HEAD)
 SHA := $(shell git rev-parse HEAD)
 
