@@ -78,10 +78,16 @@ class DynamicProductFilterSet(django_filters.FilterSet):
 
         # Добавляем фильтры для EAV атрибутов
         try:
-            # Оптимизируем запрос с prefetch для избежания N+1 проблемы
-            attributes = Attribute.objects.select_related('enum_group').prefetch_related('enum_group__values').all()
+            # Оптимизируем запрос с prefetch для избежания N+1 проблемы.
+            # list() обязателен: queryset ленивый, и без него запрос уходил бы
+            # в базу уже за пределами try — при переборе ниже. Из-за этого
+            # приложение не импортировалось без живой БД, хотя except как раз
+            # и писался ради такого случая.
+            attributes = list(
+                Attribute.objects.select_related('enum_group').prefetch_related('enum_group__values').all()
+            )
         except Exception:
-            # Таблица еще не создана (во время миграций)
+            # Таблица ещё не создана (во время миграций) или БД недоступна
             return filters
 
         # Создаем динамические фильтры на основе EAV атрибутов
