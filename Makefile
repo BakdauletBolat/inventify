@@ -1,11 +1,56 @@
 COMPOSE = docker compose
 COMPOSE_PROD = docker compose -f docker-compose.prod.yml
 
+IMAGE ?= ghcr.io/bakdauletbolat/inventify
+BRANCH := $(shell git rev-parse --abbrev-ref HEAD)
+SHA := $(shell git rev-parse HEAD)
+
+# ============================================================
+# Сборка образа — ЗАПУСКАТЬ НА СВОЕЙ МАШИНЕ, НЕ НА СЕРВЕРЕ
+#
+# Обычно образ собирает GitHub Actions. Эти цели — запасной путь, когда
+# Actions недоступны. Сервер x86, а мак на Apple Silicon, поэтому сборка
+# идёт через эмуляцию и занимает 20-40 минут.
+#
+# Другой реестр (например Docker Hub) задаётся переменной:
+#   make image-release IMAGE=<логин>/inventify
+# ============================================================
+
+.PHONY: image-release
+image-release:         ## собрать под сервер, проверить и запушить в реестр
+	$(MAKE) image-build
+	$(MAKE) image-check
+	docker push $(IMAGE):$(BRANCH)
+	docker push $(IMAGE):sha-$(SHA)
+	@echo "Готово. На сервере: make deploy"
+	@echo "Откат на этот коммит: INVENTIFY_IMAGE=$(IMAGE):sha-$(SHA)"
+
+.PHONY: image-build
+image-build:           ## собрать образ под linux/amd64 и оставить локально
+	docker buildx build \
+		--platform linux/amd64 \
+		-t $(IMAGE):$(BRANCH) \
+		-t $(IMAGE):sha-$(SHA) \
+		--load .
+
+# Та же проверка, что делает workflow перед публикацией: ловит образы,
+# в которых приложение не поднимается, до того как они уедут на прод.
+.PHONY: image-check
+image-check:           ## проверить, что приложение в собранном образе стартует
+	docker run --rm --platform linux/amd64 \
+		-e SECRET_KEY=smoke-test -e DEBUG=0 \
+		-e CELERY_BROKER_URL=redis://localhost:6379/0 \
+		-e CELERY_CACHE_URL=redis://localhost:6379/1 \
+		$(IMAGE):$(BRANCH) \
+		poetry run python manage.py check
+	docker run --rm --platform linux/amd64 \
+		$(IMAGE):$(BRANCH) poetry run pip show drf-api-logger | head -2
+
 # ============================================================
 # Деплой на прод: подтянуть код и готовый образ, поднять, почистить
 #
-# Образ собирается в GitHub Actions и лежит в ghcr — на прод-сервере
-# 1.9 ГБ RAM без swap, `docker compose build` там уходит в OOM.
+# На прод-сервере 1.9 ГБ RAM без swap — `docker compose build` там уходит
+# в OOM, поэтому образ только скачивается.
 # ============================================================
 
 .PHONY: deploy
@@ -24,7 +69,7 @@ migrate-prod:
 # Откат на предыдущий образ: посмотреть теги и запустить нужный
 .PHONY: rollback-list
 rollback-list:         ## показать скачанные образы приложения
-	docker images ghcr.io/bakdauletbolat/inventify --format '{{.Tag}}\t{{.CreatedSince}}'
+	docker images $(IMAGE) --format '{{.Tag}}\t{{.CreatedSince}}'
 
 # Безопасная чистка. Не трогает БД, фото (media_volume) и статику.
 # Запускается автоматически после каждого deploy.
